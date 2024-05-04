@@ -1,7 +1,3 @@
-// Parameters.
-int size = mpisize;
-int rank = mpirank;
-
 // Imports.
 include "getARGV.idp"
 
@@ -13,9 +9,15 @@ fespace Vh(Th, P1);
 // Generate boundary conditions.
 int nbc = getARGV("-bc", D);
 Vh[int] bcs(2 * nbc);
-for (int j = 0; j < nbc; j++){
+for (int j = mpirank; j < nbc; j += mpisize) {
   bcs[j] = sin( (nbc - j) * atan2(y, x) ) / sqrt( pi );
   bcs[j + nbc] = cos( ( j + 1 ) * atan2(y, x) ) / sqrt( pi );
+}
+
+for (int j = 0; j < nbc; j++) {
+  int rnk = j % mpisize;
+  broadcast(processor(rnk), bcs[j][]);
+  broadcast(processor(rnk), bcs[j + nbc][]);
 }
 
 // Generate masks.
@@ -23,10 +25,12 @@ Vh[int] masks(6);
 Vh theta = pi - atan2(y, -x);
 real dtheta = pi / 3;
 real eps = 1e-3;
+Vh sigma = 0;
 for (int j = 0; j < 6; j++){
+  real sj = getARGV("-s" + j, j + 1);
   masks[j] = ( j * dtheta - eps <= theta) * (theta < ( j + 1 ) * dtheta - eps);
+  sigma = sigma + sj * masks[j];
 }
-Vh sigma = 1;
 
 // Set variational form.
 varf a(u, v) = int2d(Th)( sigma * ( dx(u)*dx(v) + dy(u)*dy(v) ) );
@@ -48,52 +52,45 @@ for (int j = 0; j < 2 * nbc; j++){
 // Compute crossed products of solutions.
 Vh[int] Dxs(4 * nbc ^ 2);
 Vh[int] Dys(4 * nbc ^ 2);
-for (int j = 0; j < 2 * nbc; j++) {
-  for (int k = 0; k < 2 * nbc; k++) {
-    int idx = 2 * nbc * j + k;
-    if ( k >= j ) {
-      Dxs[idx] = dxs[j] * dxs[k];
-      Dys[idx] = dys[j] * dys[k];
-    }
+for (int idx = mpirank; idx <= ( 2 * nbc + 1 ) * ( 2 * nbc - 1 ) ; idx += mpisize) {
+  int j = idx / ( 2 * nbc );
+  int k = idx % ( 2 * nbc );
+  if ( k >= j ) {
+    Dxs[idx] = dxs[j] * dxs[k];
+    Dys[idx] = dys[j] * dys[k];
   }
 }
 
-int i = mpirank;
+// Broadcast crossed products.
+for (int idx = 0; idx <= ( 2 * nbc + 1 ) * ( 2 * nbc - 1 ) ; idx++) {
+  int rnk = idx % mpisize;
+  broadcast(processor(rnk), Dxs[idx][]);
+  broadcast(processor(rnk), Dys[idx][]);
+}
+
+// Compute the gradient.
+matrix[int] gradient(6);
 matrix di(2 * nbc, 2 * nbc );
 for (int j = 0; j < 2 * nbc; j++){
   for (int k = 0; k < 2 * nbc; k++){
     di(j, k) = 0.0;
     if ( k >= j ){
       int idx = 2 * nbc * j + k;
-      di(j, k) = -int2d(Th)( masks[i] * ( Dxs[idx] + Dys[idx] ));
+      di(j, k) = -int2d(Th)( masks[mpirank] * ( Dxs[idx] + Dys[idx] ));
     } else {
       di(j, k) = di(k, j);
     }
   }
 }
+gradient[mpirank] = di;
 
-matrix[int] gradient(6);
-if ( rank == 0 ){
-  gradient[0] = di;
+// Sent di to other cores.
+for (int j = 0; j < 6; j++) {
+  broadcast(processor(j), gradient[j]);
 }
-broadcast(processor(0), gradient);
 
-mpiBarrier(mpiCommWorld);
-mpiRequest req;
-if ( rank > 0 ) {
-  Isend(processor(0, req), di);
-} else {
-  for (int j = 1; j < 6; j++){
-    matrix temp;
-    Irecv(processor(j, req), temp);
-    cout << temp << endl;
-    gradient[j] = temp;
+if ( mpirank == 0 ) {
+  for (int j = 0; j < 6; j++) {
+    cout << gradient[j] << endl;
   }
 }
-
-// if ( rank == 0 ){
-//   for (int j = 0; j < 6; j++) {
-//     // cout << gradient[j] << endl;
-//   }
-// }
-
