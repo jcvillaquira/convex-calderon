@@ -1,0 +1,72 @@
+// Imports.
+include "getARGV.idp"
+
+// Load mesh.
+int D = getARGV("-D", 20);
+int i = getARGV("-i", 0);
+mesh Th = readmesh("/home/julian/Repos/convex-calderon/mesh/Th1_20.msh");
+fespace Vh(Th, P1);
+
+// Generate boundary conditions.
+int nbc = getARGV("-bc", D);
+Vh[int] bcs(2 * nbc);
+for (int j = 0; j < nbc; j++){
+  bcs[j] = sin( (nbc - j) * atan2(y, x) ) / sqrt( pi );
+  bcs[j + nbc] = cos( ( j + 1 ) * atan2(y, x) ) / sqrt( pi );
+}
+
+// Generate masks.
+Vh[int] masks(6);
+Vh theta = pi - atan2(y, -x);
+real dtheta = pi / 3;
+real eps = 1e-3;
+for (int j = 0; j < 6; j++){
+  masks[j] = ( j * dtheta - eps <= theta) * (theta < ( j + 1 ) * dtheta - eps);
+}
+Vh sigma = 1;
+
+// Set variational form.
+varf a(u, v) = int2d(Th)( sigma * ( dx(u)*dx(v) + dy(u)*dy(v) ) );
+matrix A = a(Vh, Vh);
+set(A, solver = sparsesolver);
+
+// Compute solutions for each boundary condition.
+Vh[int] dxs(2 * nbc);
+Vh[int] dys(2 * nbc);
+Vh temp = 0.0;
+for (int j = 0; j < 2 * nbc; j++){
+  varf l(unused, v) = int1d(Th, D-1)( bcs[j] * v );
+  real[int] f = l(0, Vh);
+  temp[] = A^-1 * f;
+  dxs[j] = dx(temp);
+  dys[j] = dy(temp);
+}
+
+// Compute crossed products of solutions.
+Vh[int] Dxs(4 * nbc ^ 2);
+Vh[int] Dys(4 * nbc ^ 2);
+for (int j = 0; j < 2 * nbc; j++) {
+  for (int k = 0; k < 2 * nbc; k++) {
+    int idx = 2 * nbc * j + k;
+    if ( k >= j ) {
+      Dxs[idx] = dxs[j] * dxs[k];
+      Dys[idx] = dys[j] * dys[k];
+    }
+  }
+}
+
+matrix di(2 * nbc, 2 * nbc );
+for (int j = 0; j < 2 * nbc; j++){
+  for (int k = 0; k < 2 * nbc; k++){
+    di(j, k) = 0.0;
+    if ( k >= j ){
+      int idx = 2 * nbc * j + k;
+      di(j, k) = -int2d(Th)( masks[i] * ( Dxs[idx] + Dys[idx] ));
+    } else {
+      di(j, k) = di(k, j);
+    }
+  }
+}
+
+cout << di << endl;
+
