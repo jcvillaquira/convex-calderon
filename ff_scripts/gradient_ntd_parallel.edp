@@ -1,41 +1,22 @@
 // Imports.
 include "getARGV.idp"
+load "lapack"
 
-// Load mesh.
-int D = getARGV("-D", 20);
-mesh Th = readmesh("/home/julian/Repos/convex-calderon/mesh/Th1_20.msh");
-fespace Vh(Th, P1);
+// Load parameters.
+int D = getARGV("-bc", 20);
+int nbc = getARGV("-bc", 20);
 
-// Generate boundary conditions.
-int nbc = getARGV("-bc", D);
-Vh[int] bcs(2 * nbc);
-for (int j = mpirank; j < nbc; j += mpisize) {
-  bcs[j] = sin( (nbc - j) * atan2(y, x) ) / sqrt( pi );
-  bcs[j + nbc] = cos( ( j + 1 ) * atan2(y, x) ) / sqrt( pi );
-}
-
-for (int j = 0; j < nbc; j++) {
-  int rnk = j % mpisize;
-  broadcast(processor(rnk), bcs[j][]);
-  broadcast(processor(rnk), bcs[j + nbc][]);
-}
-
-// Generate masks.
-Vh[int] masks(6);
-Vh theta = pi - atan2(y, -x);
-real dtheta = pi / 3;
-real eps = 1e-3;
-Vh sigma = 0;
-for (int j = 0; j < 6; j++){
-  real sj = getARGV("-s" + j, j + 1);
-  masks[j] = ( j * dtheta - eps <= theta) * (theta < ( j + 1 ) * dtheta - eps);
-  sigma = sigma + sj * masks[j];
-}
+// Include additional scripts.
+include "utils/mesh.edp"
+include "utils/boundary_basis.edp"
+include "utils/conductivity_mask.edp"
+include "utils/linear_algebra.edp"
 
 // Set variational form.
-varf a(u, v) = int2d(Th)( sigma * ( dx(u)*dx(v) + dy(u)*dy(v) ) );
+varf a(u, v) = int2d(Th)( sigma0 * ( dx(u)*dx(v) + dy(u)*dy(v) ) );
 matrix A = a(Vh, Vh);
 set(A, solver = sparsesolver);
+set(A, sparams = "-pc_type cholesky -pc_factor_mat_solver_type mumps -mat_mumps_icntl_33 1 -ksp_view");
 
 // Compute solutions for each boundary condition.
 Vh[int] dxs(2 * nbc);
@@ -89,8 +70,3 @@ for (int j = 0; j < 6; j++) {
   broadcast(processor(j), gradient[j]);
 }
 
-if ( mpirank == 0 ) {
-  for (int j = 0; j < 6; j++) {
-    cout << gradient[j] << endl;
-  }
-}

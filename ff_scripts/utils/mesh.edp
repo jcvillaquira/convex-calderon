@@ -1,0 +1,3 @@
+// Script for loading the mesh.
+mesh Th = readmesh("/home/julian/Repos/convex-calderon/mesh/Th1_20.msh");
+fespace Vh(Th, P1);
