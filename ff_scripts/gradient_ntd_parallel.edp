@@ -16,7 +16,6 @@ include "utils/linear_algebra.edp"
 varf a(u, v) = int2d(Th)( sigma0 * ( dx(u)*dx(v) + dy(u)*dy(v) ) );
 matrix A = a(Vh, Vh);
 set(A, solver = sparsesolver);
-set(A, sparams = "-pc_type cholesky -pc_factor_mat_solver_type mumps -mat_mumps_icntl_33 1 -ksp_view");
 
 // Compute solutions for each boundary condition.
 Vh[int] dxs(2 * nbc);

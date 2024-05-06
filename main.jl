@@ -4,8 +4,7 @@ using ProgressBars
 using Plots
 
 # Load packages.
-include("src/ff_call.jl")
-include("src/barrier.jl")
+include("src/utils.jl")
 
 # Setting up de problem.
 a, b = 0.5, 2.0

@@ -1,0 +1,75 @@
+// Imports.
+include "getARGV.idp"
+load "lapack"
+
+// Load parameters.
+int D = getARGV("-D", 20);
+int nbc = getARGV("-bc", 20);
+int J = getARGV("-J", 10);
+real alpha = getARGV("-alpha", 0.01);
+real a = getARGV("-a", 0.2);
+real b = getARGV("-b", 2.0);
+
+// Load the mesh.
+mesh Th = readmesh("/home/julian/Repos/convex-calderon/mesh/Th1_20.msh");
+fespace Vh(Th, P1);
+
+// Include additional scripts.
+include "src/ff/boundary_basis.edp"
+include "src/ff/conductivity_mask.edp"
+include "src/ff/forward.edp"
+include "src/ff/barrier.edp"
+
+// Load real and starting point.
+real[int] xr(6);
+real[int] x0(6);
+for (int j = 0; j < 6; j++){
+  xr[j] = getARGV("-xr" + j, 1.0);
+  x0[j] = getARGV("-x0" + j, 0.95 * b);
+}
+Vh sr;
+sr[] = vec2cond(xr);
+
+// Compute forward evaluation at xr.
+matrix Ar = varform(sr[]);
+set(Ar, solver = sparsesolver);
+Vh[int] ur( 2 * nbc );
+matrix Fxr( 2 * nbc, 2 * nbc );
+if (mpirank == 0) {
+  computesols(Ar, ur);
+  forward(Fxr, ur);
+}
+broadcast(processor(0), Fxr);
+for (int j = 0; j < mpisize; j++) {
+  broadcast(processor(0), ur[j][]);
+}
+
+// Apply gradient descent.
+mpiBarrier(mpiCommWorld);
+for (int j = 0; j < J; j++){
+  if (mpirank == 0) {
+    cout << "Step " << j << " of " << J << endl;
+  }
+  Vh s0;
+  s0[] = vec2cond(x0);
+  matrix A0 = varform(s0[]);
+  set(A0, solver = sparsesolver);
+  Vh[int] u0( 2 * nbc );
+  matrix Fx0( 2 * nbc, 2 * nbc );
+  if (mpirank == 0) {
+    computesols(A0, u0);
+    forward(Fx0, u0);
+  }
+  broadcast(processor(0), Fx0);
+  for (int k = 0; k < mpisize; k++) {
+    broadcast(processor(0), u0[k][]);
+  }
+  real[int] dsdp(6);
+  gradsdp(u0, dsdp, Fx0, Fxr);
+  real[int] dbnd = gradbound(x0, a) + gradbound(x0, b);
+  real[int] grad = dbnd + dsdp;
+  x0 = x0 - alpha * grad;
+}
+
+cout << x0 << endl;
+
