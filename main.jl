@@ -1,27 +1,35 @@
 # Imports.
 using LinearAlgebra
 using ProgressBars
-
-# Auxiliar function.
-rnd(n = 6) = 0.15 .* rand(n) .+ 0.45
+using Plots
 
 # Load packages.
 include("src/ff_call.jl")
 include("src/barrier.jl")
 
-h = 0.000000001;
-x0 = FreeFemCalls.get_ntd_map(bc = 2);
-x1 = FreeFemCalls.get_ntd_map([1.0 + h, 1, 1, 1, 1, 1]; bc = 2);
-( x1 - x0 ) / h
+# Setting up de problem.
+a, b = 0.5, 2.0
+bc = 5
+rnd(n = 6) = ( b - a ) .* rand(n) .+ a
+x = rnd()
+Fx = FreeFemCalls.get_ntd_map(x; bc = bc)
 
-# Create original conductivity.
-x = [0.5, 0.55, 0.5, 0.55, 0.5, 0.55]
-Fx = FreeFemCalls.get_ntd_map(x)
+# Finding analytic center.
+x0 = 0.9 .* fill(b, 6)
+alpha = 0.01
+N = 10
+xs = Array{Float64}(undef, N + 1, 6)
+xs[1, :] .= x0
+for j in ProgressBar(range(1, N))
+  Fx0 = FreeFemCalls.get_ntd_map(x0; bc = bc)
+  idelta = inv(Fx - Fx0)
+  @time grad = FreeFemCalls.get_gradient(x0; bc = bc)
+  grad_psd = [tr(idelta * dj) for dj in grad]
+  grad_ba = Barrier.gradient_scalar_barrier(x0, a)
+  grad_bb = Barrier.gradient_scalar_barrier(x0, b)
+  x0 .-= alpha .* ( grad_psd .+ grad_ba .+ grad_bb )
+  xs[j + 1, :] .= x0
+end
 
-# Set problem parameters.
-a, b = 0.2, 1.0
-
-# Compute analytic center.
-x0 = fill(0.99 * b, 6)
-Fx0 = get_ntd_map(x0)
+@time grad = FreeFemCalls.get_gradient(x0; bc = 20);
 

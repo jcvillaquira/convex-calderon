@@ -3,7 +3,7 @@ include "getARGV.idp"
 load "lapack"
 
 // Load parameters.
-int D = getARGV("-bc", 20);
+int D = getARGV("-D", 20);
 int nbc = getARGV("-bc", 20);
 
 // Include additional scripts.
@@ -68,5 +68,12 @@ gradient[mpirank] = di;
 // Sent di to other cores.
 for (int j = 0; j < 6; j++) {
   broadcast(processor(j), gradient[j]);
+}
+
+if ( mpirank == 0 ) {
+  for (int j = 0; j < 6; j++) {
+    cout << gradient[j] << endl;
+    cout << " -placeholder- ";
+  }
 }
 
