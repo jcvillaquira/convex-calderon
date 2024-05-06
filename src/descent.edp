@@ -7,8 +7,9 @@ int D = getARGV("-D", 20);
 int nbc = getARGV("-bc", 20);
 int J = getARGV("-J", 10);
 real alpha = getARGV("-alpha", 0.01);
-real a = getARGV("-a", 0.2);
+real a = getARGV("-a", 0.5);
 real b = getARGV("-b", 2.0);
+real dev = getARGV("-dev", 0);
 
 // Load the mesh.
 mesh Th = readmesh("/home/julian/Repos/convex-calderon/mesh/Th1_20.msh");
@@ -25,7 +26,7 @@ real[int] xr(6);
 real[int] x0(6);
 for (int j = 0; j < 6; j++){
   xr[j] = getARGV("-xr" + j, 1.0);
-  x0[j] = getARGV("-x0" + j, 0.95 * b);
+  x0[j] = getARGV("-x0" + j, 0.9 * b);
 }
 Vh sr;
 sr[] = vec2cond(xr);
@@ -47,7 +48,7 @@ for (int j = 0; j < mpisize; j++) {
 // Apply gradient descent.
 mpiBarrier(mpiCommWorld);
 for (int j = 0; j < J; j++){
-  if (mpirank == 0) {
+  if (mpirank == 0 && dev == 1) {
     cout << "Step " << j << " of " << J << endl;
   }
   Vh s0;
@@ -70,6 +71,4 @@ for (int j = 0; j < J; j++){
   real[int] grad = dbnd + dsdp;
   x0 = x0 - alpha * grad;
 }
-
-cout << x0 << endl;
 
