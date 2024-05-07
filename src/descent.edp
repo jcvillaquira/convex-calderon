@@ -10,6 +10,7 @@ real alpha = getARGV("-alpha", 0.01);
 real a = getARGV("-a", 0.5);
 real b = getARGV("-b", 2.0);
 real dev = getARGV("-dev", 0);
+real w = getARGV("-w", 0.0);
 
 // Load the mesh.
 mesh Th = readmesh("/home/julian/Repos/convex-calderon/mesh/Th1_20.msh");
@@ -45,9 +46,16 @@ for (int j = 0; j < mpisize; j++) {
   broadcast(processor(0), ur[j][]);
 }
 
+// Create the weight.
+real[int] c(6);
+for (int j = 0; j < c.n; j++) {
+  c[j] = 1.0;
+}
+
 // Apply gradient descent.
 mpiBarrier(mpiCommWorld);
-for (int j = 0; j < J; j++){
+bool cont = true;
+for (int j = 0; j < J && cont; j++){
   if (mpirank == 0 && dev == 1) {
     cout << "Step " << j << " of " << J << endl;
   }
@@ -69,6 +77,15 @@ for (int j = 0; j < J; j++){
   gradsdp(u0, dsdp, Fx0, Fxr);
   real[int] dbnd = gradbound(x0, a) + gradbound(x0, b);
   real[int] grad = dbnd + dsdp;
+  grad += w * c;
   x0 = x0 - alpha * grad;
 }
 
+string opt = "" + x0[0];
+for (int j = 1; j < x0.n; j++){
+  opt = opt + "," + x0[j];
+}
+
+if (mpirank == 0){
+  cout << opt << endl;
+}
