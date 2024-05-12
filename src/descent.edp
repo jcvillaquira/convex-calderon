@@ -6,14 +6,16 @@ load "lapack"
 int D = getARGV("-D", 20);
 int nbc = getARGV("-bc", 20);
 int J = getARGV("-J", 10);
-real alpha = getARGV("-alpha", 0.01);
+int N = getARGV("-N", 10);
+real alpha0 = getARGV("-alpha0", 0.01);
 real a = getARGV("-a", 0.5);
 real b = getARGV("-b", 2.0);
 real dev = getARGV("-dev", 0);
-real w = getARGV("-w", 0.0);
+real dw = getARGV("-dw", 0.01);
+real w = 0.0;
 
 // Load the mesh.
-mesh Th = readmesh("/home/julian/Repos/convex-calderon/mesh/Th1_20.msh");
+mesh Th = readmesh("/home/julian/Repos/convex-calderon/mesh/Th1_" + D + ".msh");
 fespace Vh(Th, P1);
 
 // Include additional scripts.
@@ -29,7 +31,7 @@ for (int j = 0; j < 6; j++){
   xr[j] = getARGV("-xr" + j, 1.0);
   x0[j] = getARGV("-x0" + j, 0.9 * b);
 }
-Vh sr;
+Vh sr, s0;
 sr[] = vec2cond(xr);
 
 // Compute forward evaluation at xr.
@@ -51,41 +53,46 @@ real[int] c(6);
 for (int j = 0; j < c.n; j++) {
   c[j] = 1.0;
 }
-
-// Apply gradient descent.
 mpiBarrier(mpiCommWorld);
-bool cont = true;
-for (int j = 0; j < J && cont; j++){
+
+// Apply interior point method.
+for (int n = 0; n < N; n++) {
   if (mpirank == 0 && dev == 1) {
-    cout << "Step " << j << " of " << J << endl;
+    cout << "Iteration " << n << " / " << N << endl;
   }
-  Vh s0;
-  s0[] = vec2cond(x0);
-  matrix A0 = varform(s0[]);
-  set(A0, solver = sparsesolver);
-  Vh[int] u0( 2 * nbc );
-  matrix Fx0( 2 * nbc, 2 * nbc );
-  if (mpirank == 0) {
-    computesols(A0, u0);
-    forward(Fx0, u0);
+  if ( n == 1 ) {
+    w = getARGV("-w", 1.0);
+  } else if ( n > 1 ) {
+    w *= 1 + dw;
   }
-  broadcast(processor(0), Fx0);
-  for (int k = 0; k < mpisize; k++) {
-    broadcast(processor(0), u0[k][]);
+  for (int j = 0; j < J; j++) {
+    s0[] = vec2cond(x0);
+    matrix A0 = varform(s0[]);
+    set(A0, solver = sparsesolver);
+    Vh[int] u0( 2 * nbc );
+    matrix Fx0( 2 * nbc, 2 * nbc );
+    if (mpirank == 0) {
+      computesols(A0, u0);
+      forward(Fx0, u0);
+    }
+    broadcast(processor(0), Fx0);
+    for (int m = 0; m < mpisize; m++) {
+      broadcast(processor(0), u0[m][]);
+    }
+    real[int] dsdp(6);
+    gradsdp(u0, dsdp, Fx0, Fxr);
+    real[int] dbnd = gradbound(x0, a) + gradbound(x0, b);
+    real[int] grad = dbnd + dsdp;
+    grad += w * c;
+    real alpha = alpha0 / (w + 1);
+    x0 = x0 - alpha * grad;
   }
-  real[int] dsdp(6);
-  gradsdp(u0, dsdp, Fx0, Fxr);
-  real[int] dbnd = gradbound(x0, a) + gradbound(x0, b);
-  real[int] grad = dbnd + dsdp;
-  grad += w * c;
-  x0 = x0 - alpha * grad;
+  string opt = "" + x0[0];
+  for (int j = 1; j < x0.n; j++){
+    opt = opt + "," + x0[j];
+  }
+  if (mpirank == 0){
+    cout << opt << endl;
+  }
 }
 
-string opt = "" + x0[0];
-for (int j = 1; j < x0.n; j++){
-  opt = opt + "," + x0[j];
-}
-
-if (mpirank == 0){
-  cout << opt << endl;
-}

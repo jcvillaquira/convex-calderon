@@ -1,9 +1,9 @@
 // Transform a matrix into a dense array.
 func real[int, int] matrix2array(matrix M) {
   real[int, int] A(M.n, M.n);
-  for (int j = 0; j < M.n; j++) {
+  for (int i = 0; i < M.n; i++) {
     for (int k = 0; k < M.n; k++) {
-      A(j, k) = M(j, k);
+      A(i, k) = M(i, k);
     }
   }
   return A;
@@ -12,8 +12,8 @@ func real[int, int] matrix2array(matrix M) {
 // Computes the trace of an n times n matrix A.
 func real tr(matrix A) {
   real trc = 0.0;
-  for (int j = 0; j < A.n; j++) {
-    trc += A(j, j);
+  for (int i = 0; i < A.n; i++) {
+    trc += A(i, i);
   }
   return trc;
 }
@@ -21,8 +21,8 @@ func real tr(matrix A) {
 // Computes the gradient the scalar bound barrier function.
 func real[int] gradbound(real[int] x, real bound) {
   real[int] dbound(x.n);
-  for (int j = 0; j < x.n; j++) {
-    dbound[j] = - 1.0 / ( x[j] - bound );
+  for (int i = 0; i < x.n; i++) {
+    dbound[i] = - 1.0 / ( x[i] - bound );
   }
   return dbound;
 }
@@ -30,22 +30,22 @@ func real[int] gradbound(real[int] x, real bound) {
 // Computes the gradient the SDP bound barrier function.
 macro gradsdp(u, grad, Fx, Fxr) {
   Vh[int] dxu( u.n ), dyu( u.n );
-  for (int j = mpirank; j < u.n; j += mpisize){
-    dxu[j] = dx( u[j] );
-    dyu[j] = dy( u[j] );
+  for (int i = mpirank; i < u.n; i += mpisize){
+    dxu[i] = dx( u[i] );
+    dyu[i] = dy( u[i] );
   }
-  for (int j = 0; j < u.n; j++ ){
-    int rnk = j % mpisize;
-    broadcast(processor(rnk), dxu[j][]);
-    broadcast(processor(rnk), dyu[j][]);
+  for (int i = 0; i < u.n; i++ ){
+    int rnk = i % mpisize;
+    broadcast(processor(rnk), dxu[i][]);
+    broadcast(processor(rnk), dyu[i][]);
   }
   Vh[int] Dxu( u.n ^ 2 ), Dyu( u.n ^ 2 );
   for (int idx = mpirank; idx <= ( u.n + 1 ) * ( u.n - 1 ) ; idx += mpisize) {
-    int j = idx / ( u.n );
+    int i = idx / ( u.n );
     int k = idx % ( u.n );
-    if ( k >= j ) {
-      Dxu[idx] = dxu[j] * dxu[k];
-      Dyu[idx] = dyu[j] * dyu[k];
+    if ( k >= i ) {
+      Dxu[idx] = dxu[i] * dxu[k];
+      Dyu[idx] = dyu[i] * dyu[k];
     }
   }
   for (int idx = 0; idx <= ( u.n + 1 ) * ( u.n - 1 ) ; idx++ ) {
@@ -60,14 +60,14 @@ macro gradsdp(u, grad, Fx, Fxr) {
   matrix diffminv = diffainv;
   for (int i = mpirank; i < 6; i += mpisize) {
     matrix di(u.n, u.n);
-    for (int j = 0; j < u.n; j++){
-      for (int k = 0; k < u.n; k++){
-        di(j, k) = 0.0;
-        if ( k >= j ){
-          int idx = u.n * j + k;
-          di(j, k) = -int2d(Th)( masks[i] * ( Dxu[idx] + Dyu[idx] ));
+    for (int k = 0; k < u.n; k++){
+      for (int m = 0; m < u.n; m++){
+        di(k, m) = 0.0;
+        if ( m >= k ){
+          int idx = u.n * k + m;
+          di(k, m) = -int2d(Th)( masks[i] * ( Dxu[idx] + Dyu[idx] ));
         } else {
-          di(j, k) = di(k, j);
+          di(k, m) = di(m, k);
         }
       }
     }
