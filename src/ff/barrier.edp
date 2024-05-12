@@ -29,53 +29,30 @@ func real[int] gradbound(real[int] x, real bound) {
 
 // Computes the gradient the SDP bound barrier function.
 macro gradsdp(u, grad, Fx, Fxr) {
-  Vh[int] dxu( u.n ), dyu( u.n );
-  for (int i = mpirank; i < u.n; i += mpisize){
-    dxu[i] = dx( u[i] );
-    dyu[i] = dy( u[i] );
-  }
-  for (int i = 0; i < u.n; i++ ){
-    int rnk = i % mpisize;
-    broadcast(processor(rnk), dxu[i][]);
-    broadcast(processor(rnk), dyu[i][]);
-  }
-  Vh[int] Dxu( u.n ^ 2 ), Dyu( u.n ^ 2 );
-  for (int idx = mpirank; idx <= ( u.n + 1 ) * ( u.n - 1 ) ; idx += mpisize) {
-    int i = idx / ( u.n );
-    int k = idx % ( u.n );
-    if ( k >= i ) {
-      Dxu[idx] = dxu[i] * dxu[k];
-      Dyu[idx] = dyu[i] * dyu[k];
-    }
-  }
-  for (int idx = 0; idx <= ( u.n + 1 ) * ( u.n - 1 ) ; idx++ ) {
-    int rnk = idx % mpisize;
-    broadcast(processor(rnk), Dxu[idx][]);
-    broadcast(processor(rnk), Dyu[idx][]);
-  }
-  mpiBarrier(mpiCommWorld);
   matrix diffm = Fxr - Fx;
   real[int, int] diffa = matrix2array(diffm);
   real[int, int] diffainv = diffa ^ -1;
   matrix diffminv = diffainv;
-  for (int i = mpirank; i < 6; i += mpisize) {
-    matrix di(u.n, u.n);
+  for (int m = mpirank; m < 6; m += mpisize) {
+    matrix dm(u.n, u.n);
+    matrix Bm = B[m];
+    set(Bm, solver = sparsesolver);
     for (int k = 0; k < u.n; k++){
-      for (int m = 0; m < u.n; m++){
-        di(k, m) = 0.0;
-        if ( m >= k ){
-          int idx = u.n * k + m;
-          di(k, m) = -int2d(Th)( masks[i] * ( Dxu[idx] + Dyu[idx] ));
+      for (int i = 0; i < u.n; i++){
+        if ( i >= k ){
+          real[int] temp = Bm * u[k][];
+          real sv = u[i][]' * temp;
+          dm(k, i) = sv;
         } else {
-          di(k, m) = di(m, k);
+          dm(k, i) = dm(i, k);
         }
       }
     }
-    matrix totrace = diffminv * di;
-    grad[i] = tr(totrace);
+    matrix totrace = diffminv * dm;
+    grad[m] = tr(totrace);
   }
-  for (int i = 0; i < 6; i++ ) {
-    int rnk = i % mpisize;
-    broadcast(processor(rnk), grad[i]);
+  for (int m = 0; m < 6; m++ ) {
+    int rnk = m % mpisize;
+    broadcast(processor(rnk), grad[m]);
   }
 } //

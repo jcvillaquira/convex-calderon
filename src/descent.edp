@@ -15,8 +15,11 @@ real dw = getARGV("-dw", 0.01);
 real w = 0.0;
 
 // Load the mesh.
-mesh Th = readmesh("/home/julian/Repos/convex-calderon/mesh/Th1_" + D + ".msh");
+mesh Th = readmesh("mesh/Th1_" + D + ".msh");
 fespace Vh(Th, P1);
+
+// Select saving file.
+ofstream file("output.txt", append);
 
 // Include additional scripts.
 include "src/ff/boundary_basis.edp"
@@ -25,8 +28,7 @@ include "src/ff/forward.edp"
 include "src/ff/barrier.edp"
 
 // Load real and starting point.
-real[int] xr(6);
-real[int] x0(6);
+real[int] x0(6), xr(6);
 for (int j = 0; j < 6; j++){
   xr[j] = getARGV("-xr" + j, 1.0);
   x0[j] = getARGV("-x0" + j, 0.9 * b);
@@ -39,23 +41,25 @@ matrix Ar = varform(sr[]);
 set(Ar, solver = sparsesolver);
 Vh[int] ur( 2 * nbc );
 matrix Fxr( 2 * nbc, 2 * nbc );
-if (mpirank == 0) {
-  computesols(Ar, ur);
-  forward(Fxr, ur);
-}
-broadcast(processor(0), Fxr);
-for (int j = 0; j < mpisize; j++) {
-  broadcast(processor(0), ur[j][]);
-}
+computesols(Ar, ur);
+forward(Fxr, ur);
 
 // Create the weight.
 real[int] c(6);
 for (int j = 0; j < c.n; j++) {
   c[j] = 1.0;
 }
-mpiBarrier(mpiCommWorld);
+
+string opt = "" + x0[0];
+for (int j = 1; j < x0.n; j++){
+  opt = opt + "," + x0[j];
+}
+if (mpirank == 0){
+  file << opt << endl;
+}
 
 // Apply interior point method.
+mpiBarrier(mpiCommWorld);
 for (int n = 0; n < N; n++) {
   if (mpirank == 0 && dev == 1) {
     cout << "Iteration " << n << " / " << N << endl;
@@ -71,14 +75,8 @@ for (int n = 0; n < N; n++) {
     set(A0, solver = sparsesolver);
     Vh[int] u0( 2 * nbc );
     matrix Fx0( 2 * nbc, 2 * nbc );
-    if (mpirank == 0) {
-      computesols(A0, u0);
-      forward(Fx0, u0);
-    }
-    broadcast(processor(0), Fx0);
-    for (int m = 0; m < mpisize; m++) {
-      broadcast(processor(0), u0[m][]);
-    }
+    computesols(A0, u0);
+    forward(Fx0, u0);
     real[int] dsdp(6);
     gradsdp(u0, dsdp, Fx0, Fxr);
     real[int] dbnd = gradbound(x0, a) + gradbound(x0, b);
@@ -87,12 +85,12 @@ for (int n = 0; n < N; n++) {
     real alpha = alpha0 / (w + 1);
     x0 = x0 - alpha * grad;
   }
-  string opt = "" + x0[0];
+  opt = "" + x0[0];
   for (int j = 1; j < x0.n; j++){
     opt = opt + "," + x0[j];
   }
   if (mpirank == 0){
-    cout << opt << endl;
+    file << opt << endl;
   }
 }
 

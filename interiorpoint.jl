@@ -1,6 +1,5 @@
 # Imports.
-using LinearAlgebra
-using ProgressBars
+using DelimitedFiles
 using CairoMakie
 
 # Load packages.
@@ -10,13 +9,13 @@ include("src/utils.jl")
 params = Dict("a" => 0.5,
   "b" => 2.0,
   "bc" => 10,
-  "D" => 10,
+  "D" => 20,
   "J" => 5,
   "w" => 1.5,
-  "alpha0" => 0.01,
-  "v" => 0,
+  "alpha0" => 0.0025,
+  "dev" => 1,
   "dw" => 0.01,
-  "N" => 500)
+  "N" => 1_000)
 rnd(n = 6) = 0.8 * ( params["b"] - params["a"] ) .* rand(n) .+ params["a"]
 
 # Define real and initial point.
@@ -28,10 +27,11 @@ cores = 6
 params_str = join(["-$x $y" for (x, y) in params], " ")
 str = "mpiexec -np $cores FreeFem++-mpi src/descent.edp $params_str $xr_txt";
 cmd = `$(split(str))`;
-opt = read(cmd, String);
-
+@time run(cmd);
+run(`notify-send done`)
 # Save recording.
-xs = prs.(split(opt, '\n')[1:end-1])
+prs(x) = parse.(Float64, split(x, ','))
+xs = prs.(reshape(readdlm("output.txt"), :))
 with_theme(theme_dark()) do
   update_theme!(font = "CMU Concrete", fontsize = 25)
   fig = Figure(;size = (1280, 720))
@@ -54,4 +54,4 @@ with_theme(theme_dark()) do
     end
   end
 end
-
+run(`notify-send rendered`)

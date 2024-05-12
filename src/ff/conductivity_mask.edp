@@ -1,11 +1,19 @@
 // Generate masks.
 Vh[int] masks(6);
+matrix[int] B(6);
 Vh theta = pi - atan2(y, -x);
 real dtheta = pi / 3;
 real eps = 1e-3;
-for (int j = 0; j < 6; j++){
+for (int j = mpirank; j < 6; j += mpisize){
   real sj = getARGV("-s" + j, 1.0);
   masks[j] = ( j * dtheta - eps <= theta) * (theta < ( j + 1 ) * dtheta - eps);
+  varf bj(u, v) = -int2d(Th)( masks[j] * ( dx(u) * dx(v) + dy(u) * dy(v) ) );
+  B[j] = bj(Vh, Vh);
+}
+for (int m = 0; m < 6; m++) {
+  int rnk = m % mpisize;
+  broadcast(processor(rnk), B[m]);
+  broadcast(processor(rnk), masks[m][]);
 }
 
 // Generate function from vector.
