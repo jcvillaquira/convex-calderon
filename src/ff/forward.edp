@@ -1,3 +1,8 @@
+// Surface integral.
+varf as(u, v) = int1d(Th, D - 1)( u * v );
+matrix As = as(Vh, Vh);
+real[int] asvec(Vh.ndof);
+
 // Computes the variational form of sigma with sigma[] = s.
 func matrix varform(real[int] s) {
   Vh sigma;
@@ -9,10 +14,14 @@ func matrix varform(real[int] s) {
 
 // Macro to compute solutions.
 macro computesols(A, sols) {
-  for (int i = 0; i < bcs.n; i++) {
+  for (int i = mpirank; i < bcs.n; i += mpisize) {
     varf l(unused, v) = int1d(Th, D-1)( bcs[i] * v );
     real[int] f = l(0, Vh);
     sols[i][] = A^-1 * f;
+  }
+  for (int i = 0; i < bcs.n; i++) {
+    int rnk = i % mpisize;
+    broadcast(processor(rnk), sols[i][]);
   }
 } //
 
@@ -21,7 +30,8 @@ macro forward(ntd, u) {
   for (int i = 0; i < u.n; i++) {
     for (int k = 0; k < u.n; k++) {
       if ( k >= i ){
-        ntd(i, k) = int1d(Th, D - 1)( u[i] * bcs[k] );
+        asvec = As * bcs[k][];
+        ntd(i, k) = u[i][]' * asvec;
       } else {
         ntd(i, k) = ntd(k, i);
       }
