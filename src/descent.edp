@@ -3,23 +3,28 @@ include "getARGV.idp"
 load "lapack"
 
 // Load parameters.
-int D = getARGV("-D", 20);
-int nbc = getARGV("-bc", 20);
+int D = getARGV("-D", 5);
+int bc = getARGV("-bc", 10);
 int J = getARGV("-J", 10);
 int N = getARGV("-N", 10);
-real alpha0 = getARGV("-alpha0", 0.01);
-real a = getARGV("-a", 0.5);
+real alpha0 = getARGV("-alpha0", 0.0005);
+real a = getARGV("-a", 0.2);
 real b = getARGV("-b", 2.0);
 real dev = getARGV("-dev", 0);
-real dw = getARGV("-dw", 0.01);
+real dw = getARGV("-dw", 0.0005);
 real w = 0.0;
 
 // Load the mesh.
 mesh Th = readmesh("mesh/Th1_" + D + ".msh");
 fespace Vh(Th, P1);
 
-// Select saving file.
-ofstream file("output.txt", append);
+// Load original and starting conductivity.
+Vh sr, tmp = 0.0;
+{
+  ifstream fl("mesh/sigma" + D);
+  fl >> sr[];
+}
+Vh s0 = 0.9 * b;
 
 // Include additional scripts.
 include "src/ff/boundary_basis.edp"
@@ -27,39 +32,31 @@ include "src/ff/conductivity_mask.edp"
 include "src/ff/forward.edp"
 include "src/ff/barrier.edp"
 
-// Load real and starting point.
-real[int] x0(6), xr(6);
-for (int j = 0; j < 6; j++){
-  xr[j] = getARGV("-xr" + j, 1.0);
-  x0[j] = getARGV("-x0" + j, 0.9 * b);
-}
-Vh sr, s0;
-sr[] = vec2cond(xr);
-
 // Compute forward evaluation at xr.
 matrix Ar = varform(sr[]);
 set(Ar, solver = sparsesolver);
-Vh[int] ur( 2 * nbc );
-matrix Fxr( 2 * nbc, 2 * nbc );
+Vh[int] ur( 2 * bc );
+matrix Fxr(ur.n , ur.n);
 computesols(Ar, ur);
 forward(Fxr, ur);
 
 // Create the weight.
-real[int] c(6);
-for (int j = 0; j < c.n; j++) {
-  c[j] = 1.0;
+real[int] d(Vh.ndof);
+{
+  ifstream fl("mesh/grad" + D);
+  fl >> d;
 }
+real[int] c(Vh.ndof);
+c = 1;
+d = - 3 / d;
+d = d / Vh.ndof;
+Vh dd;
+dd[] = d;
 
-string opt = "" + x0[0];
-for (int j = 1; j < x0.n; j++){
-  opt = opt + "," + x0[j];
-}
-if (mpirank == 0){
-  file << opt << endl;
-}
-
-// Apply interior point method.
+// TODO: Output process.
 mpiBarrier(mpiCommWorld);
+real lmin = 100;
+plot(s0, wait = false, fill = true, value = true, nbiso = 100);
 for (int n = 0; n < N; n++) {
   if (mpirank == 0 && dev == 1) {
     cout << "Iteration " << n << " / " << N << endl;
@@ -69,28 +66,32 @@ for (int n = 0; n < N; n++) {
   } else if ( n > 1 ) {
     w *= 1 + dw;
   }
+  cout << n << endl;
   for (int j = 0; j < J; j++) {
-    s0[] = vec2cond(x0);
     matrix A0 = varform(s0[]);
     set(A0, solver = sparsesolver);
-    Vh[int] u0( 2 * nbc );
-    matrix Fx0( 2 * nbc, 2 * nbc );
+    Vh[int] u0(ur.n);
     computesols(A0, u0);
+    matrix Fx0(u0.n, u0.n);
     forward(Fx0, u0);
-    real[int] dsdp(6);
+    real[int] dsdp(Vh.ndof);
     gradsdp(u0, dsdp, Fx0, Fxr);
-    real[int] dbnd = gradbound(x0, a) + gradbound(x0, b);
+    real[int] dbnd = gradbound(s0[], a) + gradbound(s0[], b);
+    Vh tmp2;
+    tmp2[] = dsdp;
+    Vh tmp3 = tmp2 * dd;
+    dsdp = tmp3[];
     real[int] grad = dbnd + dsdp;
     grad += w * c;
     real alpha = alpha0 / (w + 1);
-    x0 = x0 - alpha * grad;
+    s0[] = s0[] - alpha * grad;
+    // TODO: Output process.
   }
-  opt = "" + x0[0];
-  for (int j = 1; j < x0.n; j++){
-    opt = opt + "," + x0[j];
-  }
-  if (mpirank == 0){
-    file << opt << endl;
+  Vh delta = abs(sr - s0);
+  real lactual = delta[].min;
+  if ( lactual < lmin ) {
+    lmin = lactual;
+    plot(s0, wait = false, fill = true, cmm = n + ": " + delta[].max, value = true, nbiso = 100);
   }
 }
 

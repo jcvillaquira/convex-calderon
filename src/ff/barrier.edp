@@ -33,7 +33,7 @@ macro gradsdp(u, grad, Fx, Fxr) {
   real[int, int] diffa = matrix2array(diffm);
   real[int, int] diffainv = diffa ^ -1;
   matrix diffminv = diffainv;
-  for (int m = mpirank; m < 6; m += mpisize) {
+  for (int m = mpirank; m < grad.n; m += mpisize) {
     matrix dm(u.n, u.n);
     matrix Bm = B[m];
     set(Bm, solver = sparsesolver);
@@ -51,7 +51,7 @@ macro gradsdp(u, grad, Fx, Fxr) {
     matrix totrace = diffminv * dm;
     grad[m] = tr(totrace);
   }
-  for (int m = 0; m < 6; m++ ) {
+  for (int m = 0; m < grad.n; m++ ) {
     int rnk = m % mpisize;
     broadcast(processor(rnk), grad[m]);
   }
