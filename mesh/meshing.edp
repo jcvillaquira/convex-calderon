@@ -1,0 +1,37 @@
+// Creates the mesh forf a disk of radius R and number o layers D.
+
+// Imports.
+include "params.edp";
+
+int D = getARGV("-D", 16);
+real R = getARGV("-R", 1);
+int dev = getARGV("-dev", 1);
+
+// Radii by layer.
+real[int] radii(D);
+for (int j = 0; j < D; ++j){
+  radii[j] = R * real( j + 1 ) / D;
+}
+
+// Number of nodes by layer.
+int[int] nnodes(D);
+for (int j = 0; j < D; ++j){
+  nnodes[j] = 6 * ( j + 1 );
+}
+
+// Mesh generation.
+border borders(t = 0, 1; j)
+{
+  x = radii[j] * cos( 2 * pi * t );
+  y = radii[j] * sin( 2 * pi * t );
+  label = j;
+}
+mesh Th = buildmesh(borders(nnodes), fixedborder = true);
+
+// Save & plot.
+string meshname = "Th" + R + "_" + D + ".msh";
+if (dev == 1) {
+  plot(Th, cmm = meshname);
+} else {
+  savemesh(Th, "mesh/" + meshname);
+}

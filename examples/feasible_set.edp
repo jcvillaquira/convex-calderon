@@ -1,0 +1,21 @@
+// Compute the feasible set.
+
+// Imports.
+include "params.edp";
+
+// Load mesh.
+string meshname = "Th" + R + "_" + D + ".msh";
+mesh Th = readmesh("mesh/" + meshname);
+fespace Vh(Th, P1);
+
+// Load masks.
+Vh[int] masks(N);
+real[int] svec(N);
+Vh sigma;
+for (int j = 0; j < N;  j++) {
+  string pathmask = "mesh/" + conf + "/" + N + "_" + ( j + 1 ) + ".txt";
+  ifstream msk(pathmask);
+  msk >> masks[j][];
+  svec[j] = getARGV("-svec" + ( j + 1 ), 1.0);
+  sigma[] += svec[j] * masks[j][];
+}

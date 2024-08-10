@@ -1,0 +1,13 @@
+// Parameters.
+// D: Number of partitions of the mesh.
+// R: Radius of the disk.
+// N: Number of elements in partition.
+// dev: Show plots or save results.
+
+include "src/getARGV.idp"
+
+int D = getARGV("-D", 16);
+int N = getARGV("-N", 3);
+int dev = getARGV("-dev", 1);
+real R = getARGV("-R", 1);
+string conf = getARGV("-conf",  "disks");
