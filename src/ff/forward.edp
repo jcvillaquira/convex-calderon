@@ -38,3 +38,12 @@ macro forward(ntd, u) {
     }
   }
 } //
+
+// Compute L2 error.
+macro l2relative(u, u0, derror) {
+  Vh df = u - u0;
+  real u0norm = int2d(Th)( u0 * u0 );
+  real dfnorm = int2d(Th)( df * df );
+  derror = sqrt( dfnorm / u0norm );
+}
+

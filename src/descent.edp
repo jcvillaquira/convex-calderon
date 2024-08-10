@@ -55,7 +55,7 @@ dd[] = d;
 
 // TODO: Output process.
 mpiBarrier(mpiCommWorld);
-real lmin = 100;
+real lmax = 100.0;
 plot(s0, wait = false, fill = true, value = true, nbiso = 100);
 for (int n = 0; n < N; n++) {
   if (mpirank == 0 && dev == 1) {
@@ -66,7 +66,6 @@ for (int n = 0; n < N; n++) {
   } else if ( n > 1 ) {
     w *= 1 + dw;
   }
-  cout << n << endl;
   for (int j = 0; j < J; j++) {
     matrix A0 = varform(s0[]);
     set(A0, solver = sparsesolver);
@@ -87,11 +86,13 @@ for (int n = 0; n < N; n++) {
     s0[] = s0[] - alpha * grad;
     // TODO: Output process.
   }
-  Vh delta = abs(sr - s0);
-  real lactual = delta[].min;
-  if ( lactual < lmin ) {
-    lmin = lactual;
-    plot(s0, wait = false, fill = true, cmm = n + ": " + delta[].max, value = true, nbiso = 100);
+  real delta = 0.0;
+  l2relative(s0, sr, delta);
+  if ( delta < lmax ) {
+    lmax = delta;
+    cout << n << endl;
+    cout << lmax << endl;
+    plot(s0, wait = false, fill = true, value = false, boundary = false, nbiso = 100, ps = "convexresult.eps");
   }
 }
 
