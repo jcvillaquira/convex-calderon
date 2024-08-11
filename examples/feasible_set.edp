@@ -21,7 +21,7 @@ for (int j = 0; j < N;  j++) {
 }
 
 // Generate points in space.
-real[int] pos(20);
+real[int] pos(disc);
 for (int j = 0; j < pos.n; j++) {
   pos[j] = a + ( b - a ) * j / (pos.n - 1);
 }
@@ -31,12 +31,44 @@ include "src/ff/boundary_basis.edp";
 include "src/ff/forward.edp";
 
 // Compute evaluation.
-// matrix Ar = varform(sr[]);
-// set(Ar, solver = sparsesolver);
-// Vh[int] ur( 2 * bc );
-// matrix yr(ur.n , ur.n);
-// computesols(Ar, ur);
-// forward(yr, ur);
+matrix Ar = varform(sr[]);
+set(Ar, solver = sparsesolver);
+Vh[int] ur( 2 * bc );
+matrix yr(ur.n , ur.n);
+computesols(Ar, ur);
+forward(yr, ur);
 
+// Iterate over the discretization.
+matrix coord(N, disc ^ N);
+Vh[int] conds(coord.m);
+for (int k; k < coord.m; k++) {
+  Vh s = 0.0;
+  for (int j; j < coord.n; j++) {
+    int batch = k / ( ( disc ^ ( N - j - 1 ) ) );
+    int nx = batch % disc;
+    coord(j, k) = pos[nx];
+    s[] += coord(j, k) * masks[j][];
+  }
+  conds[k] = s;
+}
 
+// Generate NtD map for each coordinate.
+matrix[int] ntds(coord.m);
+for (int k = mpirank; k < coord.m; k += mpisize) {
+  cout << k << " / " << coord.m << endl;
+  matrix A = varform(conds[k][]);
+  set(A, solver = sparsesolver);
+  Vh[int] u( 2 * bc );
+  matrix y(u.n, u.n);
+  computesols(A, u);
+  forward(y, u);
+  ntds[k] = yr - y;
+}
+
+for (int k = 0; k < coord.m; k++) {
+  int rnk = k % mpisize;
+  broadcast(processor(rnk), ntds[k]);
+}
+
+cout << "Finish" << endl;
 
