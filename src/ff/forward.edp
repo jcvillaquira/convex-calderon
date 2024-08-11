@@ -25,7 +25,7 @@ macro computesols(A, sols) {
   }
 } //
 
-// Compute the image of xr under the forward map.
+// Compute the image of solutions u under the forward map.
 macro forward(ntd, u) {
   for (int i = 0; i < u.n; i++) {
     for (int k = 0; k < u.n; k++) {
@@ -38,12 +38,4 @@ macro forward(ntd, u) {
     }
   }
 } //
-
-// Compute L2 error.
-macro l2relative(u, u0, derror) {
-  Vh df = u - u0;
-  real u0norm = int2d(Th)( u0 * u0 );
-  real dfnorm = int2d(Th)( df * df );
-  derror = sqrt( dfnorm / u0norm );
-}
 

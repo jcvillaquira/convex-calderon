@@ -8,6 +8,17 @@ include "src/getARGV.idp"
 
 int D = getARGV("-D", 16);
 int N = getARGV("-N", 3);
+int bc = getARGV("-bc", 20);
 int dev = getARGV("-dev", 1);
 real R = getARGV("-R", 1);
+real a = getARGV("-R", 0.2);
+real b = getARGV("-R", 2.0);
 string conf = getARGV("-conf",  "disks");
+
+bool parallel = false;
+try {
+  int size = mpirank;
+  parallel = true;
+} catch (...) {
+  parallel = false;
+}

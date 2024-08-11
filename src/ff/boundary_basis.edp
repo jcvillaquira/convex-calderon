@@ -1,12 +1,6 @@
 // Generate boundary conditions.
 Vh[int] bcs(2 * bc);
-for (int j = mpirank; j < bc; j += mpisize) {
+for (int j = 0; j < bc; j++) {
   bcs[j] = sin( (bc - j) * atan2(y, x) ) / sqrt( pi );
   bcs[j + bc] = cos( ( j + 1 ) * atan2(y, x) ) / sqrt( pi );
-}
-
-for (int j = 0; j < bc; j++) {
-  int rnk = j % mpisize;
-  broadcast(processor(rnk), bcs[j][]);
-  broadcast(processor(rnk), bcs[j + bc][]);
 }

@@ -10,12 +10,33 @@ fespace Vh(Th, P1);
 
 // Load masks.
 Vh[int] masks(N);
-real[int] svec(N);
-Vh sigma;
+real[int] srv(N);
+Vh sr;
 for (int j = 0; j < N;  j++) {
   string pathmask = "mesh/" + conf + "/" + N + "_" + ( j + 1 ) + ".txt";
   ifstream msk(pathmask);
   msk >> masks[j][];
-  svec[j] = getARGV("-svec" + ( j + 1 ), 1.0);
-  sigma[] += svec[j] * masks[j][];
+  srv[j] = getARGV("-srv" + ( j + 1 ), 1.0);
+  sr[] += srv[j] * masks[j][];
 }
+
+// Generate points in space.
+real[int] pos(20);
+for (int j = 0; j < pos.n; j++) {
+  pos[j] = a + ( b - a ) * j / (pos.n - 1);
+}
+
+// Load boundary conditions and forward map.
+include "src/ff/boundary_basis.edp";
+include "src/ff/forward.edp";
+
+// Compute evaluation.
+// matrix Ar = varform(sr[]);
+// set(Ar, solver = sparsesolver);
+// Vh[int] ur( 2 * bc );
+// matrix yr(ur.n , ur.n);
+// computesols(Ar, ur);
+// forward(yr, ur);
+
+
+

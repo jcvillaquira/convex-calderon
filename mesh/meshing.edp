@@ -3,10 +3,6 @@
 // Imports.
 include "params.edp";
 
-int D = getARGV("-D", 16);
-real R = getARGV("-R", 1);
-int dev = getARGV("-dev", 1);
-
 // Radii by layer.
 real[int] radii(D);
 for (int j = 0; j < D; ++j){
