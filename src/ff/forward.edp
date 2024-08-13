@@ -14,14 +14,10 @@ func matrix varform(real[int] s) {
 
 // Macro to compute solutions.
 macro computesols(A, sols) {
-  for (int i = mpirank; i < bcs.n; i += mpisize) {
+  for (int i = 0; i < bcs.n; i += 1) {
     varf l(unused, v) = int1d(Th, D-1)( bcs[i] * v );
     real[int] f = l(0, Vh);
     sols[i][] = A^-1 * f;
-  }
-  for (int i = 0; i < bcs.n; i++) {
-    int rnk = i % mpisize;
-    broadcast(processor(rnk), sols[i][]);
   }
 } //
 

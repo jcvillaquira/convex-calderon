@@ -40,8 +40,21 @@ forward(yr, ur);
 
 // Iterate over the discretization.
 matrix coord(N, disc ^ N);
+if (mpirank == 0) {
+  for (int k = 0; k < coord.m; k += 1) {
+    for (int j; j < coord.n; j++) {
+      int batch = k / ( ( disc ^ ( N - j - 1 ) ) );
+      int nx = batch % disc;
+      coord(j, k) = pos[nx];
+    }
+  }
+}
+broadcast(processor(0), coord);
+mpiBarrier(mpiCommWorld);
+
+// Generate all the conductivities.
 Vh[int] conds(coord.m);
-for (int k; k < coord.m; k++) {
+for (int k = mpirank; k < coord.m; k += mpisize) {
   Vh s = 0.0;
   for (int j; j < coord.n; j++) {
     int batch = k / ( ( disc ^ ( N - j - 1 ) ) );
@@ -51,24 +64,42 @@ for (int k; k < coord.m; k++) {
   }
   conds[k] = s;
 }
+for (int k = 0; k < coord.m; k++) {
+  int rnk = k % mpisize;
+  broadcast(processor(rnk), conds[k][]);
+}
+mpiBarrier(mpiCommWorld);
+string filename = "examples/feasible_set_" + N + ".txt";
+if (dev == 0 && mpirank == 0) {
+  ofstream fl(filename);
+  fl << coord;
+  fl << yr;
+}
 
 // Generate NtD map for each coordinate.
 matrix[int] ntds(coord.m);
 for (int k = mpirank; k < coord.m; k += mpisize) {
-  cout << k << " / " << coord.m << endl;
+  if (mpirank == 0) {
+    cout << k << " / " << coord.m << endl;
+  }
   matrix A = varform(conds[k][]);
   set(A, solver = sparsesolver);
   Vh[int] u( 2 * bc );
   matrix y(u.n, u.n);
   computesols(A, u);
   forward(y, u);
-  ntds[k] = yr - y;
+  ntds[k] = y;
 }
-
 for (int k = 0; k < coord.m; k++) {
   int rnk = k % mpisize;
   broadcast(processor(rnk), ntds[k]);
 }
 
-cout << "Finish" << endl;
+// Save result to a file.
+if (dev == 0 && mpirank == 0) {
+  ofstream fl(filename, append);
+  for (int k = 0; k < coord.m; k++) {
+    fl << ntds[k];
+  }
+}
 
