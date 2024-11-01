@@ -1,0 +1,60 @@
+// Computes a normal vector for a given boundary condition.
+
+// Imports.
+include "params.edp";
+
+// Load mesh.
+string meshname = "Th" + R + "_" + D + ".msh";
+mesh Th = readmesh("mesh/" + meshname);
+fespace Vh(Th, P1);
+
+// Load masks.
+Vh[int] masks(N);
+real[int] srv(N);
+Vh sr;
+for (int j = 0; j < N;  j++) {
+  string pathmask = "mesh/" + conf + "/" + N + "_" + ( j + 1 ) + ".txt";
+  ifstream msk(pathmask);
+  msk >> masks[j][];
+  srv[j] = getARGV("-srv" + ( j + 1 ), 1.0);
+  sr[] += srv[j] * masks[j][];
+}
+
+// Load boundary conditions and forward map.
+include "src/ff/boundary_basis.edp";
+include "src/ff/forward.edp";
+include "src/ff/gradient.edp";
+
+// Compute pointwise evaluation.
+matrix Ar = varform(sr[]);
+set(Ar, solver = sparsesolver);
+Vh[int] ur( 2 * bc );
+matrix yr(ur.n , ur.n);
+computesols(Ar, ur);
+forward(yr, ur);
+
+// Computation of partial derivatives of function. 
+matrix[int] B(N);
+for (int j = 0; j < B.n; j += 1) {
+  Vh msk = masks[j];
+  varf bj(u, v) = -int2d(Th)( msk * ( dx(u) * dx(v) + dy(u) * dy(v) ) );
+  B[j] = bj(Vh, Vh);
+}
+
+matrix result(N, bcs.n);
+for (int m = 0; m < N; m++) {
+  matrix Bm = B[m];
+  for (int j = 0; j < bcs.n; j++) {
+    real[int] temp = Bm * ur[j][];
+    real sv = ur[j][]' * temp;
+    result(m, j) = sv;
+  }
+}
+
+// Save file.
+string filename = "examples/cone_" + N + ".txt";
+if (dev == 0 && mpirank == 0) {
+  ofstream fl(filename);
+  fl << result;
+}
+

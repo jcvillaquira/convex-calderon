@@ -1,0 +1,57 @@
+// Create indicator functions of the partition consisting of R each divided in regions.
+
+// Imports.
+include "params.edp";
+
+// Load mesh.
+string meshname = "Th" + R + "_" + D + ".msh";
+mesh Th = readmesh("mesh/" + meshname);
+
+// Create array of vectors.
+N = 2;
+real[int] radii(N);
+for (int j = 0; j < N; j++) {
+ radii[j] = real( j + 1 ) / N;
+}
+
+// Create functional space.
+fespace Vh(Th, P1);
+
+// Create pre-masks.
+real prev = -1;
+real r;
+real eps = 1.0 / ( 5 * D );
+Vh[int] premasks(N);
+for (int j = 0; j < N; j++) {
+  r = radii[j];
+  Vh mask = ( prev + eps < x ^ 2 + y ^ 2 ) * ( x ^ 2 + y ^ 2 <= r ^ 2 + eps );
+  premasks[j] = mask;
+  prev = r ^ 2;
+}
+
+Vh[int] masks(5);
+
+// Create outside masks.
+Vh premask = premasks[1];
+masks[0] = ( x > eps ) * premask;
+masks[1] = ( x <= eps ) * premask;
+
+// Create inside masks.
+premask = premasks[0];
+Vh arg = atan2(-y, -x) + pi;
+masks[2] = premask * ( -eps <= arg ) * ( arg <= 2 * pi / 3 - eps );
+masks[3] = premask * ( 2 * pi / 3 - eps <= arg ) * ( arg <= 4 * pi / 3 - eps );
+masks[4] = premask * ( 4 * pi / 3 - eps <= arg ) * ( arg <= 6 * pi / 3 - eps );
+
+// Save or plot.
+for (int j = 0; j < masks.n; j++) {
+  Vh mask = masks[j];
+  if (dev == 1) {
+    plot(mask, fill = true, wait = true);
+  } else {
+    string maskname = "mesh/segments/" + N + "_" + ( j + 1 ) + ".txt";
+    ofstream ff(maskname);
+    ff << mask[];
+  }
+}
+

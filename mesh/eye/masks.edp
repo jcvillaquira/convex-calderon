@@ -1,0 +1,30 @@
+// Create indicator function of the partition consisting of a disk surrounded by a uniform partition.
+
+// Imports.
+include "params.edp";
+
+// Load mesh and functional space.
+string meshname = "Th" + R + "_" + D + ".msh";
+mesh Th = readmesh("mesh/" + meshname);
+fespace Vh(Th, P1);
+
+// Create indicator functions.
+real eps = 1.0 / ( 5 * D );
+N = 3;
+Vh[int] masks(N);
+Vh complement = 0.5 ^ 2 + eps < x ^ 2 + y ^ 2;
+masks[0] = x ^ 2 + y ^ 2 <= 0.5 ^ 2 + eps;
+masks[1] = complement * ( x < eps );
+masks[2] = complement * ( x >= eps );
+
+for (int j = 0; j < masks.n; j++) {
+  Vh mask = masks[j];
+  if (dev == 1) {
+    plot(mask, fill = true, wait = true);
+  } else {
+    string maskname = "mesh/eye/" + N + "_" + ( j + 1 ) + ".txt";
+    ofstream ff(maskname);
+    ff << mask[];
+  }
+}
+

@@ -30,7 +30,7 @@ Vh s0 = 0.9 * b;
 include "src/ff/boundary_basis.edp"
 include "src/ff/conductivity_mask.edp"
 include "src/ff/forward.edp"
-include "src/ff/barrier.edp"
+include "src/ff/gradient.edp"
 include "src/ff/errors.edp"
 
 // Compute forward evaluation at xr.

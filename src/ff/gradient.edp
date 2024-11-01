@@ -1,22 +1,4 @@
-// Transform a matrix into a dense array.
-func real[int, int] matrix2array(matrix M) {
-  real[int, int] A(M.n, M.n);
-  for (int i = 0; i < M.n; i++) {
-    for (int k = 0; k < M.n; k++) {
-      A(i, k) = M(i, k);
-    }
-  }
-  return A;
-}
-
-// Computes the trace of an n times n matrix A.
-func real tr(matrix A) {
-  real trc = 0.0;
-  for (int i = 0; i < A.n; i++) {
-    trc += A(i, i);
-  }
-  return trc;
-}
+include "src/ff/utils.edp"
 
 // Computes the gradient the scalar bound barrier function.
 func real[int] gradbound(real[int] x, real bound) {

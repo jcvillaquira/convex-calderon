@@ -1,0 +1,28 @@
+// Create indicator function of a triangle inside a circle.
+
+// Imports.
+include "params.edp";
+
+// Load mesh and functional space.
+string meshname = "Th" + R + "_" + D + ".msh";
+mesh Th = readmesh("mesh/" + meshname);
+fespace Vh(Th, P1);
+
+// Create indicator functions.
+real eps = 1.0 / ( 5 * D );
+N = 2;
+Vh[int] masks(N);
+masks[0] = ( y >= -0.5 ) * ( x <= 0.5 ) * ( y - x <= 0 );
+masks[1] = 1.0 - masks[0];
+
+for (int j = 0; j < masks.n; j++) {
+  Vh mask = masks[j];
+  if (dev == 1) {
+    plot(mask, fill = true, wait = true);
+  } else {
+    string maskname = "mesh/triangle/" + N + "_" + ( j + 1 ) + ".txt";
+    ofstream ff(maskname);
+    ff << mask[];
+  }
+}
+
