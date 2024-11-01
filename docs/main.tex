@@ -1,0 +1,317 @@
+\documentclass{article}
+
+% Styling.
+\usepackage[margin = 1.4in]{geometry}
+\usepackage[colorlinks = true, linkcolor = blue, citecolor = blue, urlcolor = black]{hyperref}
+
+% Import packages.
+\usepackage{bbm}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{float}
+
+% Import tikz libraries.
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usetikzlibrary{calc}
+\pgfplotsset{compat=1.18}
+
+% Create environments.
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+% Define commands.
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+\renewcommand{\epsilon}{\varepsilon}
+\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}}
+\newcommand{\face}{\text{face}}
+\newcommand{\ones}{\mathbbm1}
+\newcommand{\tr}[1]{\textup{tr}\left(#1\right)}
+
+% BibTex imports.
+\usepackage{biblatex}
+\addbibresource{./references.bib}
+
+\begin{document}
+Let $\Omega$ be a Lipschitz domain in $\mathbb R^m$ and let $\sigma\in L^\infty(\Omega)$ with $\text{essinf}(\sigma)>0$.
+In the pioneering paper \cite{calderonpioneer} Calder\'on proposed the following question: is it possible to recover the function $\sigma$ from boundary measurements of solutions of the differential equation $-\text{div}(\sigma\nabla u)=0$?
+As it was shown later, the answer to the question is affirmative if the Neumann-to-Dirichlet operator $\Lambda(\sigma)$ is known.
+That is, if $u|_{\partial\Omega}$ is known for each $u$ solution of
+\begin{equation}
+\begin{cases}
+-\text{div}(\sigma\nabla u)=0,\\
+\sigma\frac{\partial u}{\partial n} = g,
+\end{cases}
+\end{equation}
+with $g$ varying over $L^2_0(\partial\Omega)$.
+The problem is, however, ill-posed in the sense of Hadamard, which makes it difficult to design reconstruction numerical schemes.
+In \cite{convexcalderon} it was shown that if $\sigma$ is restricted to a suitable finite dimensional space of $L^\infty(\Omega)$ then the reconstruction can be obtained as the solution of a convex optimization problem.
+
+Suppose that $\Omega$ is divided into $J$ disjoint pixels (connected open sets with Lipschitz boundary) $P_1,\dots,P_J$, $\overline\Omega = \bigcup_{j=1}^J \overline{P}_j$.
+Moreover, assume the following:
+\begin{assumption}\label{as:labeling}
+The pixels are enumerated according to their distance to the boundary so that for each $j=1,\dots,J$ the set $\overline\Omega \setminus \left(\overline P_{j+1}\cup\cdots\cup \overline P_J\right)$ is connected and contains a non-empty open subset of $\partial\Omega$.
+\end{assumption}
+We identify a vector $\sigma\in\mathbb R^n_+$ with a conductivity $\sigma(x) = \sum_j \sigma(j) \chi_{P_j}(x)$ and will usually restrict ourselves to $\sigma$ belonging to the compact set $K = [a,b]^J$ for some fixed $b>a>0$.
+Let $\Lambda(\sigma) \in L(L_0^2(\partial\Omega))$ be the Neumann-to-Dirichlet map associated to the differential expression $-\text{div}(\sigma\nabla u)=0$.
+One of the main results in \cite{convexcalderon} stating that $\sigma$ can be characterized as the corner of certain convex set is shown below.
+
+\begin{theorem}\label{thm:important}
+There exists $c\in\mathbb R^J_+$ such that for all $\sigma\in K$ the optimization problem
+\begin{align}
+& \textup{min}\;\; c\tau \nonumber \\
+& \textup{subject to }\; \tau \in K \label{eq:optimization} \\
+& \phantom{\textup{subject to }\;} \Lambda(\tau) \leq \Lambda(\sigma) \nonumber
+\end{align}
+has $\sigma$ as the unique minimizer.
+\end{theorem}
+
+In this work we study the structure of the feasible set $\left\{\tau\in K: \Lambda(\tau)\leq\Lambda(\sigma)\right\}$ for a given $\sigma$ and then use that to conclude information about the weight vector $c$.
+We start by recalling well-known facts about Calder\'on's map $\sigma\mapsto\Lambda(\sigma)$.
+
+\begin{lemma}\label{lm:harrach}
+Let $\Lambda:\mathbb R^J_+ \to L(L^2_0(\partial\Omega))$ be the Calder\'on's map.
+The following holds:
+\begin{enumerate}
+\item $\Lambda(\sigma)$ is a self-adjoint positive semi-definite compact operator for each $\sigma\in\mathbb R^J_+$.\label{it:selfadjointness}
+\item $\Lambda$ is monotonically decreasing. That is, if $\tau\geq\sigma$ component-wise then $\Lambda(\tau)\leq\Lambda(\sigma)$.
+In particular $\Lambda'(\sigma)(e_j)\leq0$ for $j=1,\dots,J$.\label{it:monotonicity}
+\item $\Lambda$ is convex, and in particular for $\tau,\sigma\in\mathbb R^J_+$ it holds that $\Lambda(\tau)-\Lambda(\sigma)\geq \Lambda'(\sigma)(\tau-\sigma)$.\label{it:convexity}
+\item For any $\sigma\in\mathbb R^J_+$, $j\in \{1,2,\dots,J\}$ and constants $d_{j+1},\dots,d_J\in\mathbb R$ the operator
+$$\Lambda'(\sigma)\left(e_j + d_{j+1}e_{j+1}+ \dots + d_J e_J\right)$$
+is not positive semi-definite.\label{it:localizedpotentials}
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+See \cite{convexcalderon}.
+\end{proof}
+
+\section*{Construction of Weights}
+In this section we explore properties of the feasible set and their implications in terms of the weight vector $c$.
+
+\begin{lemma}\label{lm:positivity}
+Let $\sigma,\tau\in \mathbb R^J_+$ such that $\Lambda(\tau)\leq\Lambda(\sigma)$.
+If $\sigma\neq\tau$ and $j\in\{1,2,\dots,J\}$ is the first component where they differ then $\tau(j) > \sigma(j)$.
+\end{lemma}
+\begin{proof}
+Suppose by contradiction that $\delta = \tau(j) - \sigma(j) < 0$.
+By convexity of $\Lambda$ in the form of part \ref{it:convexity} in Lemma \ref{lm:harrach} we have
+\begin{align*}
+\Lambda(\tau) - \Lambda(\sigma) &\geq \Lambda'(\sigma)(\tau-\sigma) \\
+&= \Lambda'(\sigma)\left(\delta e_j + \sum_{k>j}(\tau(k)-\sigma(k))e_k \right) \\
+&\not\leq 0
+\end{align*}
+where the last assertion follows from a localized potentials result as in part \ref{it:localizedpotentials} of Lemma \ref{lm:harrach}.
+Therefore, we have reached a contradiction $\Lambda(\tau)-\Lambda(\sigma) \not\leq0$ from what follows $\tau(j)\geq \sigma(j)$.
+\end{proof}
+\begin{corollary}\label{cr:coordinate}
+Let $\sigma\in K$ and $j\in\{1,2,\dots,J\}$.
+If $\tau\in K$ is defined by
+$$
+\tau(k) = \begin{cases}
+\sigma(k) &\text{ if }k\leq j, \\
+b &\text{ otherwise},
+\end{cases}
+$$
+then $\Lambda(\tau)\leq\Lambda(\sigma)$ and $\Lambda(\tau - \delta e_j) \not\leq \Lambda(\sigma)$ for any $0<\delta<\sigma(j)$.
+\end{corollary}
+\begin{proof}
+The first part follows by monotonicity (Lemma \ref{lm:harrach} part \ref{it:monotonicity}) of the map $\Lambda$ since $\tau\geq\sigma$ while the second follows directly from Lemma \ref{lm:positivity}.
+\end{proof}
+Corollary \ref{cr:coordinate} says that, given the measurement $\Lambda(\sigma)$, one possible algorithm for recovering $\sigma$ is to start with the conductivity $\tau = b\ones$ and decrease one component at a time until $\tau$ is out of the feasibility region $\Lambda(\tau)\leq \Lambda(\sigma)$.
+It is important to note that care should be taken when approximating $\Lambda(\tau)$ by a finite-dimensional projection as the boundary conditions used to show part \ref{it:localizedpotentials} in Lemma \ref{lm:harrach} may have arbitrarily large oscillations (see Figure \ref{fig:twodimensional}).
+The result can be improved as shown below.
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale = 2, >=latex]
+\draw[domain=0.2:2, smooth, variable=\x, dashed, gray!75] plot ({\x}, {
+(-(5*\x-5)+sqrt((5*\x-5)^2+36*\x))/6
+});
+\draw[domain=0.2:1, smooth, variable=\x, gray!75, fill = gray!25] plot ({\x}, {
+(-(5*\x-5)+sqrt((5*\x-5)^2+36*\x))/6
+}) -- (2,1) -- (2,2) -- (0.2,2) -- cycle;
+\draw[blue!25, thick, ->] (2,2) -- (2,0.808);
+\node at (1.1,1.5) {$\Lambda(\tau)\leq\Lambda(\sigma)$};
+\node[anchor = west, gray!75] at (2,0.808) {\scriptsize $ \langle\Lambda(\tau)f,f\rangle = \langle\Lambda(\sigma)f,f\rangle$};
+\node[anchor = west, blue] at (2,1.5) {\scriptsize $-e_1$};
+\node[anchor = south, blue] at (1.5,1) {\scriptsize $-e_2$};
+\draw[blue, thick, ->] (2,2) -- (2,1);
+\draw[blue, thick, ->] (2,2) -- (2,1) -- (1,1);
+\fill[black] (1,1) circle (0.015);
+\node[anchor = north east] at (1,1) {\scriptsize $\sigma$};
+\end{tikzpicture}
+\caption{Two dimensional example of the feasible set $K_{\sigma}$.}
+\label{fig:twodimensional}
+\end{figure}
+
+We say that $P_j$ is adjacent to $P_k$ if $j\neq k$ and $\overline P_j \cap \overline P_k$ is a non-empty open relative set in $\partial P_j\cup \partial P_k$.
+This relation defines a graph $G$ with vertices $P_1,\dots,P_J$ with a distinguished set $\partial G := \{ P_j : P_j \text{ touches }\partial\Omega\}$.
+\begin{corollary}\label{cr:multipledescent}
+Let $\sigma\in K$ and let $d:\{1,\dots,J\}\to\mathbb N$ defined by $d(j)=1+\textup{dist}_G(P_j,\partial G)$.
+Then, for each $1\leq l \leq \max_j d(j)=:m$, any minimizer $\tau$ of
+\begin{align*}
+&\textup{min}\;\; \sum_{j\in d^{-1}\left(\{l\}\right)}\tau(j) \\
+&\textup{subject to }\; \tau \in K \\
+&\phantom{\textup{subject to }\;} \Lambda(\tau) \leq \Lambda(\sigma) \\
+&\phantom{\textup{subject to }\;} \tau(k) = \sigma(k) \textup{ if } d(k) < l
+\end{align*}
+satisfies $\tau(j)=\sigma(j)$ for each $j$ with $d(j)=l$.
+\end{corollary}
+\begin{proof}
+Let $\displaystyle 1\leq l \leq m$ and fix $j$ such that $d(j)=l$.
+If necessary relabel $P_1,\dots,P_J$ in such a way that $P_j$ comes as the $l$-th element and Assumption \ref{as:labeling} is satisfied.
+Then it follows that $d(k)=k$ for $k<l$ and therefore, any $\tau$ in the feasible satisfies $\tau(k)=\sigma(k)$ for $k<l$.
+Therefore, Lemma \ref{lm:positivity} implies that $\tau(j)\geq\sigma(j)$ for each $j$ with $d(j)=l$, and the assertion follows.
+\end{proof}
+Corollary \ref{cr:multipledescent}, as Corollary \ref{cr:coordinate}, provides an algorithm for recovering $\sigma$ by descending a group of coordinates at a time according to their distance to the boundary.
+\begin{example}
+Let $\Omega = B_1(0)\subseteq \mathbb R^2$ and $P_j =\left\{ x\in \Omega : 0 < \|x\| < 1 \text{ and } \frac{2\pi(j-1)}{6} < \arg(x) < \frac{2\pi j}{6} \right\}$ for $j=1,\dots,J$ with $J=6$.
+Note that $d(j)=1$ for each $j=1,\dots,J$ (i.e. each pixel $P_j$ touches the boundary) and therefore Corollary \ref{cr:multipledescent} implies that the weight vector $c$ can be chosen as $c = \ones$
+An interior-point method for solving problem \ref{eq:optimization} can be implemented as described below.
+For each $\tau\in K$ let $\hat\Lambda(\tau)$ be a Galerkin projection of $\Lambda(\tau)$ with respect to the set $\left\{ \sin(k\theta),\cos(k\theta)\right\}_{k=1}^{n_b}$ for some $n_b\in\mathbb N$.
+We consider the barrier function given by
+$$ B(\tau) = -\sum_j\log(b-\tau_j) -\sum_j\log(\tau_j-a) - \log(\det(Y-\hat\Lambda(\tau))) $$
+where $Y = \hat\Lambda(\sigma)$ is the measurement associated to the unknown conductivity $\sigma$.
+The first two terms in the definition of $B$ guarantee that $\tau$ stays within $K =[a,b]^J$ while the last term guarantees that $\hat\Lambda(\tau)\leq\hat\Lambda(\sigma)$.
+For each $t>0$ we consider the (in principle unbounded) optimization problem
+\begin{align}
+\min_{\tau\in\mathbb R^J}\;\; t\sum_j \tau(j) + B(\tau). \label{eq:interiorpoint}
+\end{align}
+We take $t\to\infty$, and for each fixed $t$ we approximate the solution to \eqref{eq:interiorpoint} by a simple gradient-descent scheme.
+That is, if $f_t$ is the objective function in \eqref{eq:interiorpoint}, we update the iterates $\{\tau_n\}_n$ following the rule $\tau_{n+1}=\tau_n - \alpha \nabla f_t(\tau_n)$ where the step-size depends on $t$ and possibly on $n$.
+A straightforward computations yields
+$$
+\partial_j f_t(\tau) = -\frac{1}{\tau(j)-b} - \frac{1}{\tau(j)-a} - \tr{(Y-\hat\Lambda(\tau))^{-1}\hat\Lambda'(\tau)(e_j)}
+$$
+where $\Lambda'(\tau)$ (and therefore $\hat\Lambda'(\tau)$) can be computed using the fact that
+$$
+\int_{\partial\Omega}g\Lambda'(\tau)(d)h\,\text ds = -\int_\Omega d(x)\nabla u^g(x) \cdot \nabla u^h(x) \,\text dx
+$$
+where $u^g$ and $u^h$ solve $-\text{div}(\tau\nabla u) = 0$ with Neumann boundary conditions $g$ and $h$ respectively.
+A FreeFEM++ \cite{freefem} implementation can be found in this \href{https://github.com/jcvillaquira/convex-calderon}{repository}.
+If $\{t_n\}_n$ is chosen geometrically increasing by $t_0=0$, $t_1=1.5$ and $t_{n+1} = 1.01 t_n$ and for each $n$ ten gradient descent steps are applied, then the error by epoch decreases as shown in Figure \ref{fig:convexerror}.
+\begin{figure}[H]
+\centering
+\input{figures/convexerror}
+\caption{Error by iteration for problem \eqref{eq:interiorpoint}.}
+\label{fig:convexerror}
+\end{figure}
+\end{example}
+If the functionals $c_1,\dots,c_m$ are defined as $c_l(j)=1$ if $d(j)=l$ and $0$ otherwise,
+$$ \face_{c_m}\left(\face_{c_{m-1}}\left(\dots \left(\face_{c_1}(K_\sigma\right)\right)\right) = \{\sigma\}$$
+where $K_\sigma = \{\tau\in K : \Lambda(\tau)\leq\Lambda(\sigma)\}$.
+The next conjecture is based on the fact, that if $K'$ is a polytope and $c_1,\dots,c_m$ are functionals, studying the normal fan to $K'$ yields an $\epsilon>0$ such that 
+$$ \face_{c_m}(\face_{c_{m-1}}(\dots (\face_{c_1}(K'))) = \face_{c_1+\epsilon c_2 + \dots + \epsilon^{m-1}c_m}\left(K'\right).$$
+\begin{conjecture}\label{cj:normalfan}
+There exists an $\epsilon > 0$ such that for each $\sigma\in K$ the unique minimizer of 
+\begin{align*}
+&\textup{min}\;\; \sum_{j}\epsilon^{d(j)-1}\tau(j) \\
+&\textup{subject to }\; \tau \in K \\
+&\phantom{\textup{subject to }\;} \Lambda(\tau) \leq \Lambda(\sigma)
+\end{align*}
+is $\sigma$.
+In other words, the weight vector can be chosen as $c = \sum_{l}\epsilon^{l-1} c_l$ where $c_l(j)=1$ if $d(j)=l$ and $0$ otherwise (see Figure \ref{fig:normalcone}).
+\end{conjecture}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale = 2, >=latex]
+\draw[domain=0.2:1, smooth, variable=\x, gray!75, fill = gray!25] plot ({\x}, {
+(-(5*\x-5)+sqrt((5*\x-5)^2+36*\x))/6
+}) -- (2,1) -- (2,2) -- (0.2,2) -- cycle;
+\node at (1.1,1.5) {$\Lambda(\tau)\leq\Lambda(\sigma)$};
+\node[anchor = south west] at (1,1) {\scriptsize $\sigma$};
+\fill[blue!8] (1,1) --++ (0,-0.75) arc (-90:-108.43:0.75) -- cycle;
+\draw[blue!40, thin, ->] (1,1) --++ (0,-0.6);
+\draw[blue!40, thin, ->] (1,0.4) --++ (-0.125,0);
+\draw[blue!40, thin, ->] (1,1) --++ (0,-0.6) --++ (-0.125,0);
+\draw[blue, thick, ->] (1,1) --++ (-0.125,-0.6);
+\node[blue!40, anchor = west] at (1,0.7) {\scriptsize $-c_1$};
+\node[blue!40, anchor = north] at (1,0.4) {\scriptsize $-\epsilon c_2$};
+\node[blue, anchor = east] at (0.9,0.7) {\scriptsize $-c_1-\epsilon c_2$};
+\draw[blue, dashed] ($(1,1)+(0.6,-0.125)$) --++ (-1.2,0.25);
+\fill[black] (1,1) circle (0.015);
+\end{tikzpicture}
+\caption{Normal cone of $K_\sigma$ at $\sigma$.}
+\label{fig:normalcone}
+\end{figure}
+
+We now go back to Conjecture \ref{cj:normalfan} and prove some facts pointing in that direction.
+\begin{lemma}
+Suppose that $d(j)=1$ for each $j=1,2,\dots,J-1$.
+Then there exists an $\epsilon > 0$ such that the weight vector can be chosen as $c = (1,\dots,1,\epsilon)$.
+That is, if $\sigma\in K$, $\tau\in\mathbb R^J$ and $\Lambda(\tau)\leq\Lambda(\sigma)$ then $c\tau > c\sigma$.
+\end{lemma}
+\begin{proof}
+Let $\sigma$ and $\tau$ as in the statement and note that, as in the proof of Corollary \ref{cr:multipledescent}, we have $\tau(j)\geq\sigma(j)$ for $j=1,\dots,J-1$.
+If $\tau(J)\geq\sigma(J)$ it follows trivially that $c\tau\geq c\sigma$ and therefore we assume $\tau(J)<\sigma(J)$.
+Let $\displaystyle R > \sup_{\substack{j<J\\ \sigma\in K}}\frac{\|\Lambda'(\sigma)(e_j)\|}{\|\Lambda'(\sigma)(e_J)\|}$, choose $\epsilon = \frac1R$ and define $c = (1,\dots,1,\epsilon)$.
+If we suppose by contradiction that $c\tau<c\sigma$ then,
+\begin{align}
+0 &> \|\Lambda'(\sigma)(e_J)\|R c(\tau-\sigma) \nonumber\\
+&= \sum_{j<J}\|\Lambda'(\sigma)(e_J)\| R (\tau(j)-\sigma(j))+ \|\Lambda'(\sigma)(e_J)\|(\tau(J)-\sigma(J)) \label{eq:comparison}\\
+&\geq \sum_{j}\|\Lambda'(\sigma)(e_j)\|(\tau(j)-\sigma(j)) \nonumber.
+\end{align}
+If $f\in L^2_0(\partial\Omega)$ is an eigenvector associated to the smallest eigenvalue $-\|\Lambda'(\sigma)(e_J)\|$ of $\Lambda'(\sigma)(e_J)$ with $\|f\|=1$ then, by convexity,
+\begin{align*}
+\langle (\Lambda(\tau) - \Lambda(\sigma))f,f\rangle &\geq \langle \Lambda'(\sigma)(\tau-\sigma)f,f\rangle \\
+&=\sum_{j < J}(\tau(j)-\sigma(j))\langle\Lambda'(\sigma)(e_j)f,f\rangle - (\tau(J)-\sigma(J))\|\Lambda'(\sigma)(e_J)\| \\
+&\geq -\sum_{j < J}(\tau(j)-\sigma(j))\|\Lambda'(\sigma)(e_j)\| - (\tau(J)-\sigma(J))\|\Lambda'(\sigma)(e_J)\| \\
+&>0
+\end{align*}
+where the last inequality follows from \eqref{eq:comparison}.
+Finally, this implies that $\Lambda(\tau)-\Lambda(\sigma)$ is not negative semi-definite contradicting $\Lambda(\tau)\leq\Lambda(\sigma)$.
+\end{proof}
+\begin{lemma}\label{lm:existence}
+Let $\sigma\neq\tau\in K$ with $\Lambda(\tau)\leq\Lambda(\sigma)$.
+Then there exists $p\in(0,1]$ such that $ \left(\sum_l \epsilon^{l-1}c_l\right) (\tau-\sigma) >0 $ for any $\epsilon\in(0,p]$.
+\end{lemma}
+\begin{proof}
+Take $j\geq 1$ as in Lemma \ref{lm:positivity} and let $l'=d(j)$.
+By an argument similar to that of the proof of Corollary \ref{cr:multipledescent}, $\tau(j')\geq\sigma(j')$ for each $j'$ with $d(j')=l'$.
+Therefore, if $\delta := \sum_{d(j')=l'}\tau(j')-\sigma(j')> 0$, then
+\begin{align*}
+\left(\sum_l \epsilon^{l-1}c_l\right) (\tau-\sigma) &= \epsilon^{l'-1}\delta  + \epsilon^{l'}\sum_{l>l'}\epsilon^{l-l'-1}c_l(\tau-\sigma)\\
+&\geq\epsilon^{l'-1}\delta - 2bJ\epsilon^{l'}\\
+&=\epsilon^{l'-1}\left(\delta - 2bJ\epsilon\right).
+\end{align*}
+The result follows by setting $\displaystyle p = \frac{\delta}{3bJ}$.
+\end{proof}
+\todo{Arreglar la prueba o eliminar.}
+\begin{proposition}
+Fix $\sigma\in K$ and for each $\epsilon>0$ let $\tau_\epsilon\in K$ such that $\Lambda(\tau_\epsilon)\leq \Lambda(\sigma)$ and $c_\epsilon \tau_\epsilon \leq c_\epsilon \sigma$.
+Then $\tau_\epsilon\to\sigma$ as $\epsilon \to 0^+$.
+\end{proposition}
+\begin{proof}
+Let $(\epsilon_n)_n$ be a sequence of positive numbers such that $\epsilon_n\to0$ as $n\to\infty$ and $x_n := \tau_{\epsilon_n} - \sigma$ for $\tau_{\epsilon_n}$ as in the statement.
+Since $K$ is compact, $(x_n)_n$ contains a convergent subsequence which for simplicity we assume is $(x_n)_n$ itself.
+Denote $\displaystyle\lim_{n\to\infty} x_n$ by $x$ and suppose by contradiction that $x\neq 0$.
+
+By Lemma \ref{lm:existence} there exists $p > 0$ sufficiently small such that $x \in H := \left\{ y\in \mathbb R^J : c_p y > 0 \right\}$.
+Since $H$ is open, there exists $r>0$ such that $P := \overline B_r(x) \subseteq H$ with respect to the $\ell_1$ metric.
+$P$ is a polytope and therefore has a finite vertex set $V := \text{vert}(P)$.
+Again by Lemma \ref{lm:existence} for each $v\in V$ there exists $p_v$ such that $c_\epsilon v > 0$ as long as $\epsilon \in (0,p_v)$.
+If $q = \min_{v\in V}p_v$ then for each $v\in V$ we have $c_\epsilon v > 0$ if $\epsilon\in(0,q)$.
+Moreover, the same inequality holds for $y\in P = \text{conv}(V)$.
+
+Let $N\in \mathbb N$ such that $\|x_n-x\|_1<r$  and $\epsilon_n < q$ for $n\geqslant N$.
+By the previous discussion $c_{\epsilon_n}x_n>0$ since $x_n\in P$, which is a contradiction with the hypothesis $c_{\epsilon_n}x_n\leq 0$.
+Therefore $x = 0$ or in other terms, $\lim_{n\to\infty}\tau^{\epsilon_n} =\sigma$.
+Finally, as any subsequence of $(\tau_\epsilon)_{\epsilon>0}$ contains a subsequence converging to $\sigma$ it follows that $(\tau_\epsilon)_\epsilon$ itself converges to $\sigma$.
+\end{proof}
+
+\printbibliography
+
+\end{document}
+
