@@ -18,3 +18,14 @@ func real tr(matrix A) {
   return trc;
 }
 
+// Check if first eigenvalue of A is positive.
+func bool feasible(matrix A) {
+  matrix B = eye(A.n);
+  Mat dA(A);
+  Mat dB(B);
+  real[int] nev(1);
+  EPSSolve(dA, dB, values = nev, sparams = "-eps_largest_real");
+  bool answer = nev[0] <= 0;
+  return answer;
+}
+

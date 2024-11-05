@@ -1,12 +1,24 @@
-// Generate bilinear operators.
-matrix[int] B(Vh.ndof);
+// Generate masks and bilinear forms.
+Vh[int] masks(N);
+matrix[int] B(N);
 for (int j = mpirank; j < B.n; j += mpisize) {
-  tmp[][j] = 1.0;
-  varf bj(u, v) = -int2d(Th)( tmp * ( dx(u) * dx(v) + dy(u) * dy(v) ) );
+  string path = "mesh/" + conf + "/" + N + "_" + ( j + 1 ) + ".txt";
+  ifstream msk(path);
+  msk >> masks[j][];
+  varf bj(u, v) = -int2d(Th)( masks[j] * ( dx(u) * dx(v) + dy(u) * dy(v) ) );
   B[j] = bj(Vh, Vh);
-  tmp = 0.0;
+}
+for (int m = 0; m < B.n; m++) {
+  int rnk = m % mpisize;
+  broadcast(processor(rnk), B[m]);
+  broadcast(processor(rnk), masks[m][]);
 }
 
-for (int j = 0; j < B.n; j++) {
-  broadcast(processor( j % mpisize ), B[j]);
+// Generate function from vector.
+func real[int] vec2cond(real[int] x) {
+  Vh s = 0.0;
+  for (int j = 0; j < x.n; j++) {
+    s = s + masks[j] * x[j];
+  }
+  return s[];
 }

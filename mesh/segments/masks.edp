@@ -8,10 +8,13 @@ string meshname = "Th" + R + "_" + D + ".msh";
 mesh Th = readmesh("mesh/" + meshname);
 
 // Create array of vectors.
-N = 2;
-real[int] radii(N);
-for (int j = 0; j < N; j++) {
- radii[j] = real( j + 1 ) / N;
+if ( N != 5 && N != 6 ) {
+  cout << "Available options for N are 5 and 6." << endl;
+  exit(1);
+}
+real[int] radii(N - 3);
+for (int j = 0; j < radii.n; j++) {
+ radii[j] = real( j + 1 ) / radii.n;
 }
 
 // Create functional space.
@@ -21,27 +24,31 @@ fespace Vh(Th, P1);
 real prev = -1;
 real r;
 real eps = 1.0 / ( 5 * D );
-Vh[int] premasks(N);
-for (int j = 0; j < N; j++) {
+Vh[int] premasks(radii.n);
+for (int j = 0; j < radii.n; j++) {
   r = radii[j];
   Vh mask = ( prev + eps < x ^ 2 + y ^ 2 ) * ( x ^ 2 + y ^ 2 <= r ^ 2 + eps );
   premasks[j] = mask;
   prev = r ^ 2;
 }
-
-Vh[int] masks(5);
+Vh[int] masks(N);
 
 // Create outside masks.
-Vh premask = premasks[1];
+Vh premask = premasks[premasks.n - 1];
 masks[0] = ( x > eps ) * premask;
 masks[1] = ( x <= eps ) * premask;
 
-// Create inside masks.
-premask = premasks[0];
+// Create itermediate masks.
+premask = premasks[premasks.n - 2];
 Vh arg = atan2(-y, -x) + pi;
 masks[2] = premask * ( -eps <= arg ) * ( arg <= 2 * pi / 3 - eps );
 masks[3] = premask * ( 2 * pi / 3 - eps <= arg ) * ( arg <= 4 * pi / 3 - eps );
 masks[4] = premask * ( 4 * pi / 3 - eps <= arg ) * ( arg <= 6 * pi / 3 - eps );
+
+// Create last mask.
+if ( N == 6 ) {
+  masks[5] = premasks[0];
+}
 
 // Save or plot.
 for (int j = 0; j < masks.n; j++) {

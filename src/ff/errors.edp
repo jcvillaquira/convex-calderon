@@ -1,8 +1,14 @@
-// Compute L2 error.
+// Compute L2 error between functions.
 macro l2relative(u, u0, derror) {
   Vh df = u - u0;
   real u0norm = int2d(Th)( u0 * u0 );
   real dfnorm = int2d(Th)( df * df );
   derror = sqrt( dfnorm / u0norm );
+} //
+
+// Compute l2 error between vectors.
+macro l2vector(v, v0, derror) {
+  real[int] dv = v - v0;
+  derror = sqrt( dv' * dv );
 } //
 

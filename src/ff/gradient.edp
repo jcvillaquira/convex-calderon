@@ -1,5 +1,3 @@
-include "src/ff/utils.edp"
-
 // Computes the gradient the scalar bound barrier function.
 func real[int] gradbound(real[int] x, real bound) {
   real[int] dbound(x.n);

@@ -1,5 +1,7 @@
 verbosity = 0;
 include "src/getARGV.idp"
+load "lapack"
+load "PETSc"
 
 // Parameters.
 // int D: Number of partitions of the mesh.
@@ -8,11 +10,12 @@ include "src/getARGV.idp"
 // real R: Radius of the disk.
 
 int D = getARGV("-D", 16);
-int N = getARGV("-N", 3);
+int N = getARGV("-N", 6);
 int bc = getARGV("-bc", 20);
 int dev = getARGV("-dev", 1);
 int disc = getARGV("-disc", 20);
+int niter = getARGV("-niter", 1000000);
 real R = getARGV("-R", 1);
 real a = getARGV("-a", 0.2);
 real b = getARGV("-b", 2.0);
-string conf = getARGV("-conf",  "disks");
+string conf = getARGV("-conf",  "segments");
