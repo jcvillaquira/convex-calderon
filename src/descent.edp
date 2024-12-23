@@ -4,9 +4,9 @@ include "params.edp";
 // Additional parameters.
 int J = getARGV("-J", 10);
 real alpha0 = getARGV("-alpha0", 0.1);
-real dw = getARGV("-dw", 0.001);
+real dw = getARGV("-dw", 0.0001);
 int mincoord = getARGV("-mincoord", 0);
-int maxcoord = getARGV("-maxcoord", N);
+int maxcoord = getARGV("-maxcoord", N - 1);
 
 // Load the mesh.
 mesh Th = readmesh("mesh/Th1_" + D + ".msh");
@@ -27,56 +27,55 @@ for (int j = 0; j < N; j++){
   x0[j] = getARGV("-x0" + j, 0.9 * b);
   c[j] = getARGV("-c" + j, 1.0);
 }
-Vh sr;
-sr[] = vec2cond(xr);
+
+// Define variables.
+Vh[int] u( 2 * bc );
+Vh s0, sr = vec2cond(xr);
 
 // Compute forward evaluation at xr.
-matrix Ar = varform(sr[]);
-set(Ar, solver = sparsesolver);
-Vh[int] ur( 2 * bc );
-matrix Fxr(ur.n , ur.n);
-computesols(Ar, ur);
-forward(Fxr, ur);
+matrix A = varform(sr[]);
+set(A, solver = sparsesolver);
+matrix Fxr(u.n, u.n);
+computesols(A, u);
+forward(Fxr, u);
 
 // Central path parameters.
 real[int] w(niter);
 w[0] = 0.0;
-w[1] = getARGV("-w", 250.0);
+w[1] = getARGV("-w", 500.0);
 for (int n = 2; n < w.n; n++) {
   w[n] = ( 1 + dw ) * w[n-1];
 }
 
+// Visualization parameters.
 real[int] viso(100);
 for (int j = 0; j < viso.n; j++) {
   viso[j] = a + j * ( b - a ) / ( viso.n - 1 );
 }
 
-// Apply interior point method.
+// Interior point method preliminaries.
 mpiBarrier(mpiCommWorld);
-real lmax = 10.0;
-Vh s0;
+matrix Fx0(u.n, u.n);
+matrix dFx(u.n, u.n);
+real[int] grad(N);
+
+// Apply interior point method.
 for (int n = 0; n < niter; n++) {
-  matrix dFx(Fxr.n, Fxr.m);
   real[int] x0bk = x0;
   for (int j = 0; j < J; j++) {
     s0[] = vec2cond(x0);
-    matrix A0 = varform(s0[]);
-    set(A0, solver = sparsesolver);
-    Vh[int] u0(ur.n);
-    computesols(A0, u0);
-    matrix Fx0(u0.n, u0.n);
-    forward(Fx0, u0);
-    dFx = Fx0 - Fxr;
-    real[int] dsdp(N);
-    gradsdp(u0, dsdp, Fx0, Fxr);
-    real[int] dbnd = gradbound(x0, b);
-    real[int] grad = dbnd + dsdp;
+    A = varform(s0[]);
+    set(A, solver = sparsesolver);
+    computesols(A, u);
+    forward(Fx0, u);
+    gradsdp(u, grad, Fx0, Fxr);
     grad += w[n] * c;
     real alpha = alpha0 / ( w[n] + 1 );
     for (int l = mincoord; l <= maxcoord; l++) {
-      x0[l] = x0[l] - alpha * grad[l];
+      x0[l] = min(x0[l] - alpha * grad[l], b);
     }
   }
+  dFx = Fx0 - Fxr;
   bool cont = feasible(dFx);
   if (cont) {
     real delta = 0.0;
@@ -93,7 +92,7 @@ for (int n = 0; n < niter; n++) {
   } else {
     alpha0 = 0.8 * alpha0;
     if (mpirank == 0) {
-      cout << "alpha0 updated to " << alpha0 << " at iteration " << n << "." << endl;
+      cout << "alpha0 <- " << alpha0 << " at iteration " << n << "." << endl;
     }
     x0 = x0bk;
     n = n - 1;

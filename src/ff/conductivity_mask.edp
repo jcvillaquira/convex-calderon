@@ -7,6 +7,7 @@ for (int j = mpirank; j < B.n; j += mpisize) {
   msk >> masks[j][];
   varf bj(u, v) = -int2d(Th)( masks[j] * ( dx(u) * dx(v) + dy(u) * dy(v) ) );
   B[j] = bj(Vh, Vh);
+  set(B[j], solver = sparsesolver);
 }
 for (int m = 0; m < B.n; m++) {
   int rnk = m % mpisize;

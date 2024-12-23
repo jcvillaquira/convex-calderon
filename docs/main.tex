@@ -59,12 +59,12 @@ The problem is, however, ill-posed in the sense of Hadamard, which makes it diff
 In \cite{convexcalderon} it was shown that if $\sigma$ is restricted to a suitable finite dimensional space of $L^\infty(\Omega)$ then the reconstruction can be obtained as the solution of a convex optimization problem.
 
 Suppose that $\Omega$ is divided into $J$ disjoint pixels (connected open sets with Lipschitz boundary) $P_1,\dots,P_J$, $\overline\Omega = \bigcup_{j=1}^J \overline{P}_j$.
-Moreover, assume the following:
+Throughout this work we assume the following:
 \begin{assumption}\label{as:labeling}
 The pixels are enumerated according to their distance to the boundary so that for each $j=1,\dots,J$ the set $\overline\Omega \setminus \left(\overline P_{j+1}\cup\cdots\cup \overline P_J\right)$ is connected and contains a non-empty open subset of $\partial\Omega$.
 \end{assumption}
-We identify a vector $\sigma\in\mathbb R^n_+$ with a conductivity $\sigma(x) = \sum_j \sigma(j) \chi_{P_j}(x)$ and will usually restrict ourselves to $\sigma$ belonging to the compact set $K = [a,b]^J$ for some fixed $b>a>0$.
-Let $\Lambda(\sigma) \in L(L_0^2(\partial\Omega))$ be the Neumann-to-Dirichlet map associated to the differential expression $-\text{div}(\sigma\nabla u)=0$.
+We identify a vector $\sigma\in\mathbb R^J_+$ with a conductivity by setting $\sigma(x) := \sum_j \sigma(j) \chi_{P_j}(x)$ and will usually restrict ourselves to $\sigma$ belonging to the compact set $K = [a,b]^J$ for some fixed $b>a>0$.
+For $\sigma$ as described above, let $\Lambda(\sigma) \in L(L_0^2(\partial\Omega))$ be the Neumann-to-Dirichlet map associated to the differential expression $-\text{div}(\sigma\nabla u)=0$.
 One of the main results in \cite{convexcalderon} stating that $\sigma$ can be characterized as the corner of certain convex set is shown below.
 
 \begin{theorem}\label{thm:important}
@@ -131,6 +131,7 @@ The first part follows by monotonicity (Lemma \ref{lm:harrach} part \ref{it:mono
 \end{proof}
 Corollary \ref{cr:coordinate} says that, given the measurement $\Lambda(\sigma)$, one possible algorithm for recovering $\sigma$ is to start with the conductivity $\tau = b\ones$ and decrease one component at a time until $\tau$ is out of the feasibility region $\Lambda(\tau)\leq \Lambda(\sigma)$.
 It is important to note that care should be taken when approximating $\Lambda(\tau)$ by a finite-dimensional projection as the boundary conditions used to show part \ref{it:localizedpotentials} in Lemma \ref{lm:harrach} may have arbitrarily large oscillations (see Figure \ref{fig:twodimensional}).
+That is, for an unfeasible $\tau$ the boundary condition $f$ witnessing $\Lambda(\tau)\not\leq\Lambda(\sigma)$ (i.e. $ \langle\Lambda(\tau)f,f\rangle > \langle\Lambda(\sigma)f,f\rangle $) may not be in the space spanned by the chosen basis.
 The result can be improved as shown below.
 \begin{figure}[H]
 \centering
@@ -143,7 +144,7 @@ The result can be improved as shown below.
 }) -- (2,1) -- (2,2) -- (0.2,2) -- cycle;
 \draw[blue!25, thick, ->] (2,2) -- (2,0.808);
 \node at (1.1,1.5) {$\Lambda(\tau)\leq\Lambda(\sigma)$};
-\node[anchor = west, gray!75] at (2,0.808) {\scriptsize $ \langle\Lambda(\tau)f,f\rangle = \langle\Lambda(\sigma)f,f\rangle$};
+\node[anchor = west, gray!75] at (2,0.808) {\scriptsize $ \langle\Lambda(\tau)g,g\rangle = \langle\Lambda(\sigma)g,g\rangle$};
 \node[anchor = west, blue] at (2,1.5) {\scriptsize $-e_1$};
 \node[anchor = south, blue] at (1.5,1) {\scriptsize $-e_2$};
 \draw[blue, thick, ->] (2,2) -- (2,1);
@@ -151,7 +152,7 @@ The result can be improved as shown below.
 \fill[black] (1,1) circle (0.015);
 \node[anchor = north east] at (1,1) {\scriptsize $\sigma$};
 \end{tikzpicture}
-\caption{Two dimensional example of the feasible set $K_{\sigma}$.}
+\caption{Two-dimensional example of the feasible region and a low oscillating function $g$.}
 \label{fig:twodimensional}
 \end{figure}
 
@@ -159,7 +160,7 @@ We say that $P_j$ is adjacent to $P_k$ if $j\neq k$ and $\overline P_j \cap \ove
 This relation defines a graph $G$ with vertices $P_1,\dots,P_J$ with a distinguished set $\partial G := \{ P_j : P_j \text{ touches }\partial\Omega\}$.
 \begin{corollary}\label{cr:multipledescent}
 Let $\sigma\in K$ and let $d:\{1,\dots,J\}\to\mathbb N$ defined by $d(j)=1+\textup{dist}_G(P_j,\partial G)$.
-Then, for each $1\leq l \leq \max_j d(j)=:m$, any minimizer $\tau$ of
+Then, for each $1\leq l \leq \max_j d(j)$, any minimizer $\tau$ of
 \begin{align*}
 &\textup{min}\;\; \sum_{j\in d^{-1}\left(\{l\}\right)}\tau(j) \\
 &\textup{subject to }\; \tau \in K \\
@@ -169,15 +170,15 @@ Then, for each $1\leq l \leq \max_j d(j)=:m$, any minimizer $\tau$ of
 satisfies $\tau(j)=\sigma(j)$ for each $j$ with $d(j)=l$.
 \end{corollary}
 \begin{proof}
-Let $\displaystyle 1\leq l \leq m$ and fix $j$ such that $d(j)=l$.
+Fix $\displaystyle l\leq 1$ and let $j$ such that $d(j)=l$.
 If necessary relabel $P_1,\dots,P_J$ in such a way that $P_j$ comes as the $l$-th element and Assumption \ref{as:labeling} is satisfied.
 Then it follows that $d(k)=k$ for $k<l$ and therefore, any $\tau$ in the feasible satisfies $\tau(k)=\sigma(k)$ for $k<l$.
 Therefore, Lemma \ref{lm:positivity} implies that $\tau(j)\geq\sigma(j)$ for each $j$ with $d(j)=l$, and the assertion follows.
 \end{proof}
 Corollary \ref{cr:multipledescent}, as Corollary \ref{cr:coordinate}, provides an algorithm for recovering $\sigma$ by descending a group of coordinates at a time according to their distance to the boundary.
-\begin{example}
+\begin{example}\label{ex:ones}
 Let $\Omega = B_1(0)\subseteq \mathbb R^2$ and $P_j =\left\{ x\in \Omega : 0 < \|x\| < 1 \text{ and } \frac{2\pi(j-1)}{6} < \arg(x) < \frac{2\pi j}{6} \right\}$ for $j=1,\dots,J$ with $J=6$.
-Note that $d(j)=1$ for each $j=1,\dots,J$ (i.e. each pixel $P_j$ touches the boundary) and therefore Corollary \ref{cr:multipledescent} implies that the weight vector $c$ can be chosen as $c = \ones$
+Note that $d(j)=1$ for each $j=1,\dots,J$ (i.e. each pixel $P_j$ touches the boundary) and therefore Corollary \ref{cr:multipledescent} implies that the weight vector $c$ can be chosen as $c = \ones$.
 An interior-point method for solving problem \ref{eq:optimization} can be implemented as described below.
 For each $\tau\in K$ let $\hat\Lambda(\tau)$ be a Galerkin projection of $\Lambda(\tau)$ with respect to the set $\left\{ \sin(k\theta),\cos(k\theta)\right\}_{k=1}^{n_b}$ for some $n_b\in\mathbb N$.
 We consider the barrier function given by
@@ -186,7 +187,7 @@ where $Y = \hat\Lambda(\sigma)$ is the measurement associated to the unknown con
 The first two terms in the definition of $B$ guarantee that $\tau$ stays within $K =[a,b]^J$ while the last term guarantees that $\hat\Lambda(\tau)\leq\hat\Lambda(\sigma)$.
 For each $t>0$ we consider the (in principle unbounded) optimization problem
 \begin{align}
-\min_{\tau\in\mathbb R^J}\;\; t\sum_j \tau(j) + B(\tau). \label{eq:interiorpoint}
+\min_{\tau\in\mathbb R^J_+}\;\; t\sum_j \tau(j) + B(\tau). \label{eq:interiorpoint}
 \end{align}
 We take $t\to\infty$, and for each fixed $t$ we approximate the solution to \eqref{eq:interiorpoint} by a simple gradient-descent scheme.
 That is, if $f_t$ is the objective function in \eqref{eq:interiorpoint}, we update the iterates $\{\tau_n\}_n$ following the rule $\tau_{n+1}=\tau_n - \alpha \nabla f_t(\tau_n)$ where the step-size depends on $t$ and possibly on $n$.
@@ -208,11 +209,55 @@ If $\{t_n\}_n$ is chosen geometrically increasing by $t_0=0$, $t_1=1.5$ and $t_{
 \label{fig:convexerror}
 \end{figure}
 \end{example}
-If the functionals $c_1,\dots,c_m$ are defined as $c_l(j)=1$ if $d(j)=l$ and $0$ otherwise,
-$$ \face_{c_m}\left(\face_{c_{m-1}}\left(\dots \left(\face_{c_1}(K_\sigma\right)\right)\right) = \{\sigma\}$$
+
+\begin{example}
+Suppose that the domain $\Omega = B_1(0)$ is divided as shown in Figure \ref{fig:partition3} and the unknown conductivity is $\sigma = (1.0,1.5,1.25,0.75,0.9,1.5)$.
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale = 1.25]
+\fill[gray!33] (0,1) arc (90:-90:1) -- cycle;
+\fill[gray!100] (0,1) arc (90:270:1) -- cycle;
+\draw (0,0) circle (1);
+\draw (0,-1) -- (0,1);
+\fill[gray!67] (0,0) -- (0:0.67) arc (0:120:0.67) -- cycle;
+\fill[gray!0] (0,0) -- (120:0.67) arc (120:240:0.67) -- cycle;
+\fill[gray!20] (0,0) -- (240:0.67) arc (240:360:0.67) -- cycle;
+\draw (0,0) circle (0.67);
+\draw (0,0) -- (0:0.67) -- (0,0) -- (120:0.67) -- (0,0) -- (240:0.67) -- cycle;
+\fill[gray!100] (0,0) circle (0.33);
+\draw (0,0) circle (0.33);
+\node at (0.835,0) {\scriptsize $P_1$};
+\node at (-0.835,0) {\scriptsize $P_2$};
+\node at (60:0.495) {\scriptsize $P_3$};
+\node at (180:0.495) {\scriptsize $P_4$};
+\node at (300:0.495) {\scriptsize $P_5$};
+\node at (0:0) {\scriptsize $P_6$};
+\end{tikzpicture}
+\caption{Partition of $\Omega$.}
+\label{fig:partition3}
+\end{figure}
+We explore the quality of the reconstructions given by the algorithm suggested by Corollary \ref{cr:multipledescent}.
+Starting at the constant conductivity $\tau(j)=1.8$, we optimize the coordinates of $\tau$ according to the functionals $c_1 = (1,1,0,0,0,0)$, $c_2 = (0,0,1,1,1,0,0)$ and $c_3 = (0,0,0,0,0,1)$.
+Each functional was optimized $200$ epochs by keeping the first coordinates at their values found in previous steps and the last components fixed at $1.8$.
+If $\tau_n$ is the reconstruction at epoch $n$, Figure \ref{fig:coordinatedescent} shows the values $\tau_n(j)-\sigma(j)$ for $j = 1,\dots,J$.
+Computational details are similar to those described in Example \ref{ex:ones}.
+\begin{figure}[H]
+\centering
+\input{figures/coordinatedescent}
+\caption{Epoch $k$ v.s. difference between components of $\tau_k$ and $\sigma$.}
+\label{fig:coordinatedescent}
+\end{figure}
+The final iterate of the process is $\tau = (1.04, 1.53, 1.10, 0.70, 0.79, 2.11)$ which yields the error vector $\tau - \sigma = (0.04,0.03,-0.15,-0.05,-0.11,0.61)$.
+As expected, the further the pixel $P_j$ is into the domain the greater the discrepancy between $\tau(j)$ and $\sigma(j)$.
+Indeed, in addition to numerical errors, at each stage one source of error is the discretization error described in Example \ref{ex:ones}.
+Moreover, the errors keep propagating at each one of the stages $l = 1,2,\dots,\max_j d(j)$.
+\end{example}
+
+If the functionals $c_1,\dots,c_m$ are defined as $c_l(j)=1$ if $d(j)=l$ and $0$ otherwise then \ref{cr:multipledescent} states that
+$$ \face_{c_m}\left(\face_{c_{m-1}}\left(\dots \left(\face_{c_1}\left(K_\sigma\right)\right)\right)\right) = \{\sigma\}$$
 where $K_\sigma = \{\tau\in K : \Lambda(\tau)\leq\Lambda(\sigma)\}$.
 The next conjecture is based on the fact, that if $K'$ is a polytope and $c_1,\dots,c_m$ are functionals, studying the normal fan to $K'$ yields an $\epsilon>0$ such that 
-$$ \face_{c_m}(\face_{c_{m-1}}(\dots (\face_{c_1}(K'))) = \face_{c_1+\epsilon c_2 + \dots + \epsilon^{m-1}c_m}\left(K'\right).$$
+$$ \face_{c_m}\left(\face_{c_{m-1}}\left(\dots \left(\face_{c_1}\left(K'\right)\right)\right)\right) = \face_{c_1+\epsilon c_2 + \dots + \epsilon^{m-1}c_m}\left(K'\right).$$
 \begin{conjecture}\label{cj:normalfan}
 There exists an $\epsilon > 0$ such that for each $\sigma\in K$ the unique minimizer of 
 \begin{align*}
@@ -246,6 +291,40 @@ In other words, the weight vector can be chosen as $c = \sum_{l}\epsilon^{l-1} c
 \caption{Normal cone of $K_\sigma$ at $\sigma$.}
 \label{fig:normalcone}
 \end{figure}
+
+\begin{example}
+Consider the partition of the domain $\Omega = B_1(0)\subseteq \mathbb R^2$ shown in Figure \ref{fig:partition} and conductivity $\sigma = (1.0,1.5,1.25,0.75,0.9,1.5)$.
+We explore if, by taking the weight vector as suggested in Conjecture \ref{cj:normalfan}, the optimization problem yields (an approximation of) the true conductivity $\sigma$.
+The behaviour of the norm $\|\tau_n-\sigma\|$ as a function of $n$ is shown in Figure \ref{fig:normalfanerror} with $\epsilon = \frac1{10}$.
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale = 1.25]
+\fill[gray!33] (0,1) arc (90:-90:1) -- cycle;
+\fill[gray!100] (0,1) arc (90:270:1) -- cycle;
+\draw (0,0) circle (1);
+\draw (0,-1) -- (0,1);
+\fill[gray!67] (0,0) -- (0:0.5) arc (0:120:0.5) -- cycle;
+\fill[gray!0] (0,0) -- (120:0.5) arc (120:240:0.5) -- cycle;
+\fill[gray!20] (0,0) -- (240:0.5) arc (240:360:0.5) -- cycle;
+\draw (0,0) circle (0.5);
+\draw (0,0) -- (0:0.5) -- (0,0) -- (120:0.5) -- (0,0) -- (240:0.5) -- cycle;
+\node at (0.75,0) {\scriptsize $p_1$};
+\node at (-0.75,0) {\scriptsize $p_2$};
+\node at (60:0.25) {\scriptsize $p_3$};
+\node at (180:0.25) {\scriptsize $p_4$};
+\node at (300:0.25) {\scriptsize $p_5$};
+\end{tikzpicture}
+\caption{Partition of $\Omega = B_1(0)$.}
+\label{fig:partition}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\input{figures/normalfanerror}
+\caption{Error for iterates $\tau_n$ associated to functional $c = c_1+\epsilon c_2$.}
+\label{fig:normalfanerror}
+\end{figure}
+\end{example}
 
 We now go back to Conjecture \ref{cj:normalfan} and prove some facts pointing in that direction.
 \begin{lemma}

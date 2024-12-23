@@ -1,0 +1,415 @@
+\documentclass[a0paper, portrait]{tikzposter}
+
+\usepackage[colorlinks = true, linkcolor = mb, citecolor = blue, urlcolor = black]{hyperref}
+
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage{bbm}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage{xcolor}
+
+% Tiks libraries.
+\pgfplotsset{compat = 1.18}
+\usetikzlibrary{fit}
+
+% Colors.
+\definecolor{mb}{RGB}{0, 102, 168}
+\definecolor{mr}{RGB}{225, 0, 29}
+\definecolor{my}{RGB}{255, 255, 0}
+\definecolor{bordergray}{RGB}{64, 64, 64}
+\definecolor{fillgray}{RGB}{229, 229, 229}
+
+% Title.
+\author{Juli\'an Camilo Villaquir\'a\hspace{1in}\textit{Advisor:} Mauricio Junca}
+\titlegraphic{\includegraphics[width = 4.5\textwidth]{poster/uniandes.png}}
+\settitle{
+\centering
+\vbox{
+\begin{minipage}{0.65\textwidth}
+\centering
+{\Huge
+\textsc{Semidefinite Optimization Approach\\for Calder\'on Inverse Problem}
+\par}
+\vspace*{1em}
+{\huge \@author \par}
+\end{minipage}
+\begin{minipage}{0.25\textwidth}
+\includegraphics[width = \textwidth]{poster/uniandes.png}
+\end{minipage}
+}}
+
+\definetitlestyle{mytitle}{}{}
+\usetitlestyle{mytitle}
+
+% Colors.
+\usetheme{Default}
+
+% Background.
+\definebackgroundstyle{mybg}{}
+\usebackgroundstyle{mybg}
+
+% Title.
+\usetitlestyle{Basic}
+
+% My own commands.
+\newcommand{\face}{\text{face}}
+\renewcommand{\geq}{\geqslant}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\phi}{\varphi}
+\renewcommand{\epsilon}{\varepsilon}
+
+% Environments.
+\newtheorem*{thm}{Theorem}
+\newtheorem*{cj}{Conjecture}
+
+\begin{document}
+\maketitle
+\begin{columns}
+\column{0.5}
+
+\block[roundedcorners = 4pt, linewidth = 4pt]{Calder\'on Inverse Problem}
+{
+\begin{minipage}{0.65\linewidth}
+For $\sigma\in L_+^\infty(\Omega)$ let the Neumann-to-Dirichlet operator $\Lambda(\sigma)\in L(L^2(\partial\Omega))$ defined by $\Lambda(\sigma)f=\left.u\right|_{\partial\Omega}$ where $u$ solves
+\begin{equation}
+\begin{cases}\displaystyle
+-\text{div}(\sigma\nabla u) = 0 \text{ in }\Omega,\\
+\left.\sigma\frac{\partial u}{\partial n}\right|_{\partial \Omega} = f.
+\end{cases}
+\label{eq:bvp}
+\tag{BVP}
+\end{equation}
+$\Lambda$ is a decreasing convex differentiable function with compact self-adjoint positive semidefinite values.\\[1em]
+Is it possible to invert $\Lambda$? That is, to recover $\sigma$ from the measurement $\Lambda(\sigma)$?
+The answer is \textbf{yes}, but it is an extremely ill-posed problem.\\[1em]
+Applications include Electrical Impedance Tomography (EIT) and non-destructive material testing.
+\end{minipage}
+\begin{minipage}{0.35\linewidth}
+\begin{tikzfigure}
+\begin{tikzpicture}[line width = 4pt, scale = 4, x = {(1,0)}, y = {(0,0.8)}, >=latex]
+\draw[color = black!50, fill = fillgray] (0,0.0) circle (1.0);
+\fill[fill = gray!60] (0,-0.4) ellipse (0.2 and 0.25);
+\fill[rotate = 60, fill = gray!60] (-0.1,0.6) ellipse (0.5 and 0.3);
+\fill[rotate = -60, fill = gray!60] (0.1,0.6) ellipse (0.5 and 0.3);
+\foreach \x in {0,30,...,330}
+{
+\node[line width = 2pt, circle, inner sep = 4pt, fill = white] at (\x:1.0) {};
+\pgfmathrandominteger{\b}{0}{4}
+\node[line width = 2pt, circle, inner sep = 4pt, fill = mb, opacity = 0.25 * \b] at (\x:1.0) {};
+\node[line width = 2pt, circle, inner sep = 4pt, draw = bordergray] at (\x:1.0) {};
+}
+\node[anchor = north west] at (-45:1) {$\Lambda(\sigma)f$};
+\begin{scope}[shift = {(0,3)}]
+\foreach \x in {0,30,...,330}
+{
+\pgfmathrandominteger{\b}{1}{5}
+\draw[<-, mb] (\x:1.0) -- (\x:1.2+0.05*\b);
+}
+\draw[color = black!50, fill = fillgray] (0,0.0) circle (1.0);
+\fill[fill = gray!60] (0,-0.4) ellipse (0.2 and 0.25);
+\fill[rotate = 60, fill = gray!60] (-0.1,0.6) ellipse (0.5 and 0.3);
+\fill[rotate = -60, fill = gray!60] (0.1,0.6) ellipse (0.5 and 0.3);
+\node[anchor = south west] at (45:1) {$f$};
+\end{scope}
+\draw[line width = 6pt, mr, <-] (0.2,1.1) to[out = 80, in = -70] (0.2,1.9);
+\end{tikzpicture}
+\end{tikzfigure}
+\end{minipage}
+}
+
+\block[roundedcorners = 4pt, linewidth = 4pt]{Feasible Set}
+{
+For two conductivities, $\sigma$ and $\tau$, it is possible to compare $\Lambda(\sigma)$ and $\Lambda(\tau)$ using the Loewner order.
+For example, taking into account that
+$$\langle\Lambda(\sigma)f,f\rangle = \int_\Omega \sigma \|\nabla u\|^2\,\text dx$$
+where $u$ solves \eqref{eq:bvp}, the inequality $\Lambda(\tau)\leq\Lambda(\sigma)$ implies that $\sigma$ dissipates more power into heat than $\tau$ for any boundary condition $f$.
+Therefore, for a fixed $\sigma$, natural energy inequalities yield variational constraints which define the \textit{feasible set} $\left\{\tau \in L^\infty_+(\Omega):\Lambda(\tau)\leq \Lambda(\sigma)\right\}$.\\[1em]
+By convexity and continuity of $\Lambda$, the feasible set is convex and closed.
+$\sigma$ lies in the boundary for if $\eta\neq0$ is non-negative then $\Lambda(\sigma-\eta) \not\leq \Lambda(\sigma)$ by monotonicity and injectivity of $\Lambda$.\\[1em]
+Is it possible to characterize $\sigma$ as the optimizer of a functional over the feasible set? 
+}
+
+\block[roundedcorners = 4pt, linewidth = 4pt]{Finite-Dimensional Reduction}
+{
+Suppose that $\Omega$ is divided into pixels $P_1,\dots,P_J$ ordered in such a way that for all $j$ the complement of the set $\bigcup_{k>j}\overline P_k$ is connected and contains a non-empty open subset of $\partial\Omega$.
+We identify $\sigma\in\mathbb R^J_+$ with a conductivity given by $\sigma(x)=\sum_{j}\sigma(j)\chi_{P_j}(x)$.\\[1em]
+\begin{minipage}{0.7\linewidth}
+\begin{thm}
+Let $0<a<b$.
+Then there exists $c\in\mathbb R^J$ such that for any $\sigma\in[a,b]^J$ the problem
+\begin{align*}
+& \textup{min}\;\; c\tau \\
+& \textup{subject to }\; \tau \in [a,b]^J \\
+& \phantom{\textup{subject to }\;} \Lambda(\tau) \leq \Lambda(\sigma)
+\end{align*}
+has $\sigma$ as its unique optimizer.
+\end{thm}
+\end{minipage}
+\begin{minipage}{0.3\linewidth}
+\centering
+\begin{tikzpicture}[scale = 4, line width = 4pt]
+\fill[fill = fillgray] (0,0) circle (1);
+\coordinate (A1) at (0:1);
+\coordinate (A2) at (70:1);
+\coordinate (A3) at (120:1);
+\coordinate (A4) at (230:1);
+\coordinate (B1) at (-25:0.45);
+\coordinate (B2) at (70:0.5);
+\coordinate (B3) at (125:0.5);
+\coordinate (B4) at (245:0.475);
+\begin{scope}
+\clip (0,0) circle (1);
+\draw[black!50] (A1) to[out = -90, in = 10] (B1);
+\draw[black!50] (A2) to[out = 0, in = 0] (B2);
+\draw[black!50] (A3) to[out = -90, in = 135] (B3);
+\draw[black!50] (A4) to[out = 75, in = 200] (B4);
+\draw[black!50] (B1) to[out = 90, in = 0] (B2) to (B3) to[out = 225, in = 170] (B4) to[out = 10, in = -135] (B1);
+\end{scope}
+\node at (25:0.7) {$P_1$};
+\node at (95:0.7) {$P_2$};
+\node at (180:0.7) {$P_2$};
+\node[rotate = 15] at (290:0.7) {$\dots$};
+\node at (0,0) {$P_J$};
+\draw[bordergray] (0,0) circle (1);
+\end{tikzpicture}
+\end{minipage}
+}
+
+
+\block[roundedcorners = 4pt, linewidth = 4pt]{Localized Potentials}
+{
+Appropriate boundary conditions $f$ can be chosen to study the structure of $K_\sigma := \left\{ \tau\in[a,b]^J : \Lambda(\tau) \leq \Lambda(\sigma) \right\}$.
+The localized potentials principle allows, for each $j$, to construct boundary conditions $(f_n)_n$ with high energy in $P_j$ but low energy in $P_{j+1},\dots,P_J$,
+$$
+\int_{P_j}\sigma\|\nabla u_n\|^2\,\text dx \to \infty
+\;\text{ and }\;
+\int_{P_k}\sigma\|\nabla u_n\|^2\,\text dx \to 0 \;\text{ for }\; k>j.
+$$
+
+\begin{minipage}{0.7\linewidth}
+By convexity, we have
+\begin{align*}
+\langle (\Lambda(\tau) - \Lambda(\sigma))f_n,f_n\rangle &\geq \langle \Lambda'(\sigma)(\tau - \sigma)f_n,f_n\rangle \\
+&=\sum_{k} (\tau(k)-\sigma(k))\int_{P_k}\sigma\|\nabla u_n\|^2\,\text dx
+\end{align*}
+which can be used to discard conductivities $\tau$.
+\end{minipage}
+\begin{minipage}{0.3\linewidth}
+\centering
+\begin{tikzpicture}[scale = 4, line width = 4pt]
+\fill[fill = fillgray] (0,0) circle (1);
+\foreach \t in {0,0.025,...,1}
+{
+\pgfmathsetmacro\k{\t*\t*100}
+\fill[fill = my!\k!white] (0,-0.25*\t) circle (1.0 - 0.3 * \t);
+}
+\foreach \t in {0,0.05,...,1}
+{
+\pgfmathsetmacro\k{\t*100}
+\fill[fill = orange!\k!my] (0,-0.25-0.25*\t) circle (0.7 - 0.3 * \t);
+}
+\foreach \t in {0,0.1,...,1}
+{
+\pgfmathsetmacro\k{\t*100}
+\fill[fill = black!\k!orange] (0,-0.5) circle (0.4 - 0.1 * \t);
+}
+\draw[line width = 2pt, dashed, white] (0,-0.5) circle (0.3);
+\node at (0,0.1) {$P_j$};
+\node[white] at (0,-0.5) {$P_k$};
+\draw[bordergray] (0,0) circle (1);
+\end{tikzpicture}
+\end{minipage}
+}
+
+\block[roundedcorners = 4pt, linewidth = 4pt]{}
+{
+\begin{minipage}{0.3\linewidth}
+\centering
+\begin{tikzpicture}[scale = 6.5, line width = 4pt]
+\fill[gray!33] (0,1) arc (90:-90:1) -- cycle;
+\fill[gray!100] (0,1) arc (90:270:1) -- cycle;
+\draw (0,0) circle (1);
+\draw (0,-1) -- (0,1);
+\fill[gray!67] (0,0) -- (0:0.5) arc (0:120:0.5) -- cycle;
+\fill[gray!0] (0,0) -- (120:0.5) arc (120:240:0.5) -- cycle;
+\fill[gray!20] (0,0) -- (240:0.5) arc (240:360:0.5) -- cycle;
+\draw (0,0) circle (0.5);
+\draw (0,0) -- (0:0.5) -- (0,0) -- (120:0.5) -- (0,0) -- (240:0.5) -- cycle;
+\node at (0.75,0) {$P_1$};
+\node at (-0.75,0) {$P_2$};
+\node at (60:0.25) {$P_3$};
+\node at (180:0.25) {$P_4$};
+\node at (300:0.25) {$P_5$};
+\end{tikzpicture}
+\end{minipage}
+\begin{minipage}{0.7\linewidth}
+\raggedleft
+\input{poster/normalfanerror}
+\end{minipage}
+}
+
+
+\column{0.5}
+\block[roundedcorners = 4pt, linewidth = 4pt]{Structure of $\bm{K_\sigma}$}
+{
+By localized potentials if $\eta$ is any vector such that its first non-zero component is negative then $\tau := \sigma + \eta$ is not feasible.
+Therefore, one possible reconstruction algorithm is to start with $\tau = b\mathbbm1$ and decrease one component at a time until $\tau$ is out of $K_\sigma$.
+The result can be generalized.\\[1em]
+\begin{minipage}{0.7\linewidth}
+\begin{thm}
+Let $\sigma\in K$ and let $d:\{1,\dots,J\}\to\mathbb N$ defined by $d(j)=1+\textup{dist}(P_j,\partial \Omega)$.
+Then, for each $1\leq l \leq \max_j d(j)$, any minimizer $\tau$ of
+\begin{align*}
+&\textup{min}\;\; \sum_{j\in d^{-1}\left(\{l\}\right)}\tau(j) \\
+&\textup{subject to }\; \tau \in K_\sigma \\
+&\phantom{\textup{subject to }\;} \tau(k) = \sigma(k) \textup{ if } d(k) < l
+\end{align*}
+satisfies $\tau(j)=\sigma(j)$ for each $j$ with $d(j)=l$.
+\end{thm}
+\end{minipage}
+\begin{minipage}{0.3\linewidth}
+\centering
+\begin{tikzpicture}[scale = 5, >=latex]
+\draw[domain=0.2:1, smooth, variable=\x, bordergray, line width = 2pt, fill = fillgray] plot ({\x}, {
+(-(5*\x-5)+sqrt((5*\x-5)^2+36*\x))/6
+}) -- (2,1) -- (2,2) -- (0.2,2) -- cycle;
+\node at (1.1,1.5) {$K_\sigma$};
+\node[anchor = north east] at (1,1) {$\sigma$};
+\draw[line width = 4pt, mb, ->] (2,2) -- (2,1);
+\draw[line width = 4pt, mb, ->] (2,2) -- (2,1) -- (1,1);
+\fill[bordergray] (1,1) circle (0.025);
+\node[anchor = south] at (2,2) {$\mathbbm1_{d^{-1}(\{1\})}$};
+\node[anchor = north west] at (1.5,1) {$\mathbbm1_{d^{-1}(\{2\})}$};
+\end{tikzpicture}
+\end{minipage}
+}
+
+\block[roundedcorners = 4pt, linewidth = 4pt]{Construction of Weights}
+{
+\begin{minipage}{0.7\linewidth}
+If the functionals $c_1,\dots,c_m$ are defined as $c_l(j)=1$ if $d(j)=l$ and $0$ otherwise then
+$$ \face_{c_m}\left(\face_{c_{m-1}}\left(\dots \left(\face_{c_1}\left(K_\sigma\right)\right)\right)\right) = \{\sigma\}.$$
+If $K'$ is a polytope and $c_1,\dots,c_m$ are functionals, studying the normal fan to $K'$ yields an $\epsilon>0$ such that 
+$$ \face_{c_m}\left(\face_{c_{m-1}}\left(\dots \left(\face_{c_1}\left(K'\right)\right)\right)\right) = \face_{c_1+\epsilon c_2 + \dots + \epsilon^{m-1}c_m}\left(K'\right).$$
+\phantom{.}
+\vspace{-30pt}
+\begin{cj}
+There exists an $\epsilon > 0$ such that for each $\sigma\in [a,b]^J$ the unique minimizer of 
+\begin{align*}
+&\textup{min}\;\; \sum_{j}\epsilon^{d(j)-1}\tau(j) \\
+&\textup{subject to }\; \tau \in K \\
+&\phantom{\textup{subject to }\;} \Lambda(\tau) \leq \Lambda(\sigma)
+\end{align*}
+is $\sigma$ $\left(\text{i.e. the weight vector can be chosen as }c = \sum_{l}\epsilon^{l-1} c_l\right)$.
+\end{cj}
+\end{minipage}
+\begin{minipage}{0.3\linewidth}
+\centering
+\begin{tikzpicture}[scale = 5, >=latex]
+\draw[bordergray, line width = 2pt, fill = fillgray] (0.2,1.47) -- (0.2,2) -- (2,2) -- (2,1) -- (1,1) -- cycle;
+\node at (1.1,1.5) {$K_\sigma$};
+\node[anchor = south] at (2,2) {$c_1$};
+\node[anchor = north east] at (2,1) {$c_2$};
+\begin{scope}[line width = 2pt]
+\fill[mb!15] (1,1) --++ (0,-0.75) arc (-90:-120.43:0.75) -- cycle;
+\draw[mb!50, ->] (1,1) --++ (0,-0.6);
+\draw[mb!50, ->] (1,0.4) --++ (-0.125,0);
+\draw[mb!50, ->] (1,1) --++ (0,-0.6) --++ (-0.125,0);
+\draw[mb, ->] (1,1) --++ (-0.125,-0.6);
+\node[mb!50, anchor = west] at (1,0.7) {\scriptsize $-c_1$};
+\node[mb!50, anchor = north] at (1,0.4) {\scriptsize $-\epsilon c_2$};
+\node[mb, anchor = east] at (0.9,0.7) {\small $-c_1-\epsilon c_2$};
+\draw[mb!50, dashed] ($(1,1)+(0.6,-0.125)$) --++ (-1.2,0.25);
+\end{scope}
+\draw[line width = 4pt, mb, ->] (2,2) -- (2,1);
+\draw[line width = 4pt, mb, ->] (2,2) -- (2,1) -- (1,1);
+\fill[bordergray] (1,1) circle (0.025);
+\begin{scope}[line width = 4, shift = {(1.1,3.35)}, scale = 0.9]
+\draw[gray, <->] (-1,0) -- (1,0);
+\draw[gray, <->] (0,-1) -- (0,1);
+\draw[gray, ->] (0,0) -- (-120.43:1);
+\fill[mr, opacity = 0.2] (0,-0.6) circle (0.25);
+\draw[line width = 2pt, mr, dashed] (0,-0.6) circle (0.25);
+\draw[mb, ->] (0,0) -- (0,-0.6);
+\draw[mb, ->] (0,0) --++ (0,-0.6) --++ (-0.2,0);
+\end{scope}
+\end{tikzpicture}
+\end{minipage}
+}
+
+\block[roundedcorners = 4pt, linewidth = 4pt]{Interior-Point Method}
+{
+An interior-point method was implemented with barrier function
+$$ B(\tau) = -\sum_j\log(b-\tau_j) -\sum_j\log(\tau_j-a) - \log(\det(Y-\hat\Lambda(\tau))) $$
+where $\hat\Lambda$ is a finite-dimensional projection of $\Lambda$.
+Hessian computation was infeasible, so gradient descent was used.
+For simple cases such as when all the $P_j$'s touch the boundary a FreeFEM++ implementation of algorithm converges.
+\begin{tikzfigure}
+\input{poster/convexerror}
+\end{tikzfigure}
+}
+
+\block[roundedcorners = 4pt, linewidth = 4pt]{Numerical Instability}{
+\begin{minipage}{0.7\linewidth}
+There are several factors affecting the behaviour of the algorithm:
+\begin{itemize}
+\item[\textcolor{mb}{-}] The size of the projection $\hat\Lambda$ changes the shape of $K_\sigma$.
+\item[\textcolor{mb}{-}] The choice of $\epsilon$ depends on $\hat\Lambda$ and, in principle, on $\sigma$.
+\end{itemize}
+\end{minipage}
+\begin{minipage}{0.3\linewidth}
+\centering
+\begin{tikzpicture}[scale = 5, >=latex, line width = 4pt]
+\draw[domain=0.2:2, smooth, variable=\x, dashed, gray!75] plot ({\x}, {
+(-(5*\x-5)+sqrt((5*\x-5)^2+36*\x))/6
+});
+\draw[bordergray, line width = 2pt, domain=0.2:1, smooth, variable=\x, fill = fillgray] plot ({\x}, {
+(-(5*\x-5)+sqrt((5*\x-5)^2+36*\x))/6
+}) -- (2,1) -- (2,2) -- (0.2,2) -- cycle;
+\draw[mb, ->] (2,2) -- (2,0.808);
+\node at (1.1,1.5) {$K_\sigma$};
+\node[anchor = north east, bordergray] at (2,0.808) {\small $ \langle\Lambda(\tau)g,g\rangle = \langle\Lambda(\sigma)g,g\rangle$};
+\node[anchor = north west] at (2,2) {$c_1$};
+\fill[black] (1,1) circle (0.015);
+\node[anchor = north east] at (1,1) {$\sigma$};
+\end{tikzpicture}
+\end{minipage}
+}
+
+\block[roundedcorners = 4pt, linewidth = 4pt]{}
+{
+\begin{minipage}{0.3\linewidth}
+\centering
+\begin{tikzpicture}[scale = 6.5, line width = 4pt]
+\fill[gray!33] (0,1) arc (90:-90:1) -- cycle;
+\fill[gray!100] (0,1) arc (90:270:1) -- cycle;
+\draw (0,0) circle (1);
+\draw (0,-1) -- (0,1);
+\fill[gray!67] (0,0) -- (0:0.67) arc (0:120:0.67) -- cycle;
+\fill[gray!0] (0,0) -- (120:0.67) arc (120:240:0.67) -- cycle;
+\fill[gray!20] (0,0) -- (240:0.67) arc (240:360:0.67) -- cycle;
+\draw (0,0) circle (0.67);
+\draw (0,0) -- (0:0.67) -- (0,0) -- (120:0.67) -- (0,0) -- (240:0.67) -- cycle;
+\fill[gray!100] (0,0) circle (0.33);
+\draw (0,0) circle (0.33);
+\node at (0.835,0) {$P_1$};
+\node at (-0.835,0) {$P_2$};
+\node at (60:0.495) {$P_3$};
+\node at (180:0.495) {$P_4$};
+\node at (300:0.495) {$P_5$};
+\node at (0:0) {$P_6$};
+\end{tikzpicture}
+\end{minipage}
+\begin{minipage}{0.7\linewidth}
+\raggedleft
+\input{poster/coordinatedescent}
+\end{minipage}
+}
+
+\end{columns}
+
+\end{document}
